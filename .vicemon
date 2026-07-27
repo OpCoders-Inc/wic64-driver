@@ -1,0 +1,127 @@
+layout:
+  active: 5
+  tabs:
+  - children:
+    - children:
+      - config: {}
+        title: Code
+        type: panel
+        view: Code
+      dir: vertical
+      sizes:
+      - 480
+    dir: horizontal
+    name: Code
+    sizes:
+    - 624
+  - children:
+    - config: {}
+      title: Memory
+      type: panel
+      view: Memory
+    dir: horizontal
+    name: Memory
+    sizes:
+    - 624
+  - children:
+    - children:
+      - config: {}
+        title: C64OS MemMap
+        type: panel
+        view: C64OS MemMap
+      - config: {}
+        title: Memory
+        type: panel
+        view: Memory
+      dir: vertical
+      sizes:
+      - 573
+      - 510
+    dir: horizontal
+    name: C64OS Memory
+    sizes:
+    - 2264
+  - children:
+    - children:
+      - config: {}
+        title: C64OS REU Map
+        type: panel
+        view: C64OS REU Map
+      - config: {}
+        title: REU Reader
+        type: panel
+        view: REU Reader
+      dir: vertical
+      sizes:
+      - 815
+      - 268
+    dir: horizontal
+    name: C64OS REU
+    sizes:
+    - 2264
+  - children:
+    - children:
+      - children:
+        - children:
+          - children:
+            - config: {}
+              title: C64 OS Driver
+              type: panel
+              view: C64 OS Driver
+            - config: {}
+              title: Symbols
+              type: panel
+              view: Symbols
+            dir: vertical
+            sizes:
+            - 419
+            - 664
+          - children:
+            - config: {}
+              title: Code
+              type: panel
+              view: Code
+            - config: {}
+              title: Memory
+              type: panel
+              view: Memory
+            dir: horizontal
+            sizes:
+            - 1002
+            - 611
+          dir: horizontal
+          sizes:
+          - 643
+          - 1617
+        dir: horizontal
+        sizes:
+        - 2264
+      dir: vertical
+      sizes:
+      - 1087
+    dir: horizontal
+    name: C64OS Driver
+    sizes:
+    - 2264
+  - children:
+    - config: {}
+      title: WiC64 Monitor
+      type: panel
+      view: WiC64 Monitor
+    dir: horizontal
+    name: WIC64
+    sizes:
+    - 2264
+state:
+  options:
+    follow_pc: false
+    poll_interval: 1.0
+    poll_mode: quick
+watches:
+- $D011
+- $D012
+- $D020
+- $D021
+- $DC01
+- jsig:8:i
+- d_rcv_buff:p:i

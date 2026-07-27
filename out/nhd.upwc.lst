@@ -1,0 +1,1997 @@
+   1                   
+   2                   debug = 1
+   3                   
+   4                   .include "wic64.h"
+   1                   
+   2                   WC_GET_VER_STR  = $00
+   3                   WC_GET_VER_NUM  = $26
+   4                   
+   5                   WC_GET_WIFI_NW  = $0c
+   6                   WC_IS_CONFIG    = $2f
+   7                   WC_IS_CONNECT   = $2c
+   8                   WC_CONN_SSID    = $02
+   9                   WC_CONN_SSID_I  = $0d
+  10                   
+  11                   WC_GET_MAC      = $14
+  12                   WC_GET_SSID     = $10
+  13                   
+  14                   WC_HTTP_GET     = $01
+  15                   
+  16                   WC_TCP_OPEN     = $21
+  17                   WC_TCP_AVAIL    = $30
+  18                   WC_TCP_READ     = $22
+  19                   WC_TCP_WRITE    = $23
+  20                   WC_TCP_CLOSE    = $2e
+  21                   
+  22                   WC_GET_TIME     = $15
+  23                   
+  24                   WC_GET_STS_MSG  = $2a
+  25                   
+  26                   WC_ECHO         = $fe
+  27                   
+  28                   ddra     = $dd02
+  29                   ddrb     = $dd03
+  30                   porta    = $dd00
+  31                   portb    = $dd01
+  32                   icr      = $dd0d
+  33                   
+  34                   ;--------------------------------------
+  35                   ; send command
+  36                   ;
+  37                   ; use this macro when you need to send a command with
+  38                   ; no payload, for example the GET_VERSION_STRING
+  39                   ; command requires no additional parameters
+  40                   ;
+  41                   ; paramaters:
+  42                   ;
+  43                   ;   1   wic64 command 
+  44                   
+  45                   w_snd_cmd .macro
+  46                   
+  47                       lda #\1
+  48                       jsr wic64_do_send_command
+  49                   
+  50                   .endm
+  51                   
+  52                   ;--------------------------------------
+  53                   ; send command with payload 
+  54                   ;
+  55                   ; use this macro when you do need to send a command with
+  56                   ; no payload, for example the ECHO command 
+  57                   ; requires a string, in addition the macro 
+  58                   ; will determine the size of the payload before
+  59                   ; sending and add that to the command
+  60                   ;
+  61                   ; parameters:
+  62                   ;
+  63                   ;   1   wic64 command
+  64                   ;   2   pointer to payload 
+  65                   ; 
+  66                   
+  67                   w_snd_cmd_pay .macro
+  68                   
+  69                       lda #\1
+  70                       ldx #<\2
+  71                       ldy #>\2
+  72                       jsr wic64_do_send_command_with_payload
+  73                   
+  74                   .endm
+  75                   
+  76                   
+  77                   ;--------------------------------------
+  78                   ; recv data from wic64
+  79                   ;
+  80                   ; use this macro to read data coming back from the
+  81                   ; wic64 and store it in payload
+  82                   ;
+  83                   ; paramaters:
+  84                   ;
+  85                   ;   1   pointer to data  
+  86                   
+  87                   w_rcv_dat .macro
+  88                   
+  89                       ldx #<wic64_payload
+  90                       ldy #>wic64_payload
+  91                       
+  92                       jsr wic64_do_recv_data
+  93                   
+  94                   .endm
+  95                   
+  96                   
+  97                   ;--------------------------------------
+  98                   ; recv data from wic64 to memory
+  99                   ;
+ 100                   ; use this macro to read data coming back from the
+ 101                   ; wic64 and store it in memory
+ 102                   ;
+ 103                   ; paramaters:
+ 104                   ;
+ 105                   ;   1   pointer to data  
+ 106                   
+ 107                   w_recv_datmem .macro
+ 108                   
+ 109                       ldx #<\1
+ 110                       ldy #>\1
+ 111                       
+ 112                       jsr wic64_do_recv_data
+ 113                   
+ 114                   .endm
+ 115                   
+ 116                   
+ 117                   
+ 118                   
+   5                   .include "./os/h/modules.h"
+   1                   ;----[ modules.h ]----------------------
+   2                   
+   3                   sltb     = $d000-(2*10)
+   4                   
+   5                   ;Under $cxxx for IDE64
+   6                   
+   7                   sser     = sltb-$0716
+   8                   sinp     = sser-$0350
+   9                   smat     = sinp-$0175
+  10                   stim     = smat-$021b
+  11                   
+  12                   smem     = stim-$028a
+  13                   sstr     = smem-$014d
+  14                   sfil     = sstr-$0546
+  15                   sscr     = sfil-$06ae
+  16                   smnu     = sscr-$08aa
+  17                   stkt     = smnu-$0557
+  18                   
+  19                   syscall  .segment ;lxxx,routine
+  20                            .byte \1
+  21                            .word \2
+  22                            .endm
+  23                   
+  24                   inc_h    .segment
+  25                            .include "os/h/@1.h"
+  26                            .endm
+  27                   
+  28                   inc_s    .segment
+  29                            .include "os/s/@1.s"
+  30                            .endm
+  31                   
+  32                   inc_t    .segment
+  33                            .include "os/s/t/@1.s"
+  34                            .endm
+  35                   
+  36                   inc_k    .segment
+  37                            .include "os/s/ker/@1.s"
+  38                            .endm
+  39                   
+  40                   inc_tkh  .segment
+  41                            .include "os/tk/h/@1.h"
+  42                            .endm
+  43                   
+  44                   inc_tks  .segment
+  45                            .include "os/tk/s/@1.s"
+  46                            .endm
+  47                   
+   6                   
+   7                   ;*= $b300
+   8                   *= $1000
+   9                   
+  10                   .include "inc.asm"
+   1                           #inc_s "app"
+   1                   appbase         = $0900
+   2                   utilbase        = $e000
+   3                   initextern      = $02fc
+   4                   appinit         = $0000
+   5                   appmcmd         = $0002
+   6                   appquit         = $0004
+   7                   appfrze         = $0006
+   8                   appthaw         = $0008
+   9                   utilinit        = $0000
+  10                   utilmcmd        = $0002
+  11                   utilquit        = $0004
+  12                   utilfrze        = $0006
+  13                   utilthaw        = $0008
+  14                   utilidnt        = $000a
+  15                   mc_mnu          = $0000
+  16                   mc_menq         = $0001
+  17                   mc_col          = $0002
+  18                   mc_fopn         = $0003
+  19                   mc_fsav         = $0004
+  20                   mc_stptr        = $0005
+  21                   mc_mous         = $0006
+  22                   mc_kcmd         = $0007
+  23                   mc_kprt         = $0008
+  24                   mc_mptr         = $0009
+  25                   mc_rflg         = $000a
+  26                   mc_hmem         = $000b
+  27                   mc_theme        = $000c
+  28                   mc_chrs         = $000d
+  29                   mc_devs         = $000e
+  30                   mc_memw         = $000f
+  31                   mc_jobc         = $0010
+  32                   mc_dmod         = $0011
+  33                   mc_cpbd         = $0012
+  34                   mc_date         = $0013
+  35                   mc_fsel         = $0014
+  36                   mc_splt         = $0015
+  37                   mc_reua         = $0016
+  38                   mc_media        = $0017
+  39                   mc_ntwrk        = $0018
+  40                   mc_null         = $00ff
+  41                   mnu_dis         = $0001
+  42                   mnu_sel         = $0002
+  43                   
+   2                           #inc_s "network"
+   1                   ndrvpg          = $0804
+   2                   cnplibpg        = $0244
+   3                   nettimer        = $0002
+   4                   netstat         = $0245
+   5                   ns_nhcf         = $0001
+   6                   ns_nhsp         = $0002
+   7                   ns_trcf         = $0004
+   8                   ns_trup         = $0008
+   9                   ns_cpcf         = $0010
+  10                   ns_cpup         = $0020
+  11                   ns_onlin        = $003f
+  12                   nhdpgsz         = $0000
+  13                   inibaud         = $0001
+  14                   maxbaud         = $0002
+  15                   nhddrvr         = $0003
+  16                   wifinam         = $0004
+  17                   wifipas         = $0005
+  18                   cnphost         = $0006
+  19                   cnpport         = $0007
+  20                   cnpuser         = $0008
+  21                   cnppass         = $0009
+  22                   
+   3                           #inc_s "nhd"
+   1                   wifi_ssid       = $0000
+   2                   wifi_pass       = $0002
+   3                   tcp_host        = $0000
+   4                   tcp_port        = $0002
+   5                   brc_3           = $0000
+   6                   brc_12          = $0001
+   7                   brc_24          = $0002
+   8                   brc_48          = $0003
+   9                   brc_96          = $0004
+  10                   brc_144         = $0005
+  11                   brc_192         = $0006
+  12                   brc_384         = $0007
+  13                   brc_576         = $0008
+  14                   brc_115         = $0009
+  15                   brc_230         = $000a
+  16                   
+   4                           #inc_s "pointer"
+   1                   ;----[ pointer.s ]----------------------
+   2                   
+   3                   rdxy     .macro ;Reads Ptr into X/Y
+   4                            ldx \1
+   5                            ldy \1+1
+   6                            .endm
+   7                   
+   8                   ldxy     .macro ;Loads X/Y with address
+   9                            ldx #<\1
+  10                            ldy #>\1
+  11                            .endm
+  12                   
+  13                   stxy     .macro
+  14                            stx \1
+  15                            sty \1+1
+  16                            .endm
+  17                   
+  18                   ;---------------------------------------
+  19                   ;Get and Set RegPtr from Store
+  20                   
+  21                   storeset .macro ;store,index
+  22                            stx \1+(\2*2)
+  23                            sty \1+(\2*2)+1
+  24                            .endm
+  25                   
+  26                   storeget .macro ;store,index
+  27                            ldx \1+(\2*2)
+  28                            ldy \1+(\2*2)+1
+  29                            .endm
+  30                   
+  31                   storewt  .macro ;store
+  32                            ;A      -> index to write to
+  33                            ;RegPtr -> pointer to store
+  34                            sty hibyte+1
+  35                            asl a ;x2
+  36                            tay
+  37                   
+  38                            txa
+  39                            sta \1,y
+  40                   hibyte   lda #$ff
+  41                            sta \1+1,y
+  42                            .endm
+  43                   
+  44                   storerd  .macro ;store
+  45                            ;A      -> index to read from
+  46                            ;RegPtr <- pointer from store
+  47                            asl a ;x2
+  48                            tay
+  49                   
+  50                            lda \1,y
+  51                            tax
+  52                            lda \1+1,y
+  53                            tay
+  54                            .endm
+  55                   
+  56                   ;---------------------------------------
+  57                   ;Toolkit Helpers
+  58                   
+  59                   classmethod .macro ;method_offset
+  60                            jsr setclass_+stkt
+  61                            ldy #\1
+  62                            jsr getmethod_+stkt
+  63                            .endm
+  64                   
+  65                   supermethod .macro ;method_offset
+  66                            jsr setsuper_+stkt
+  67                            ldy #\1
+  68                            jsr getmethod_+stkt
+  69                            .endm
+  70                   
+  71                   ;---------------------------------------
+  72                   ;Flag Manipulation
+  73                   
+  74                   setflag  .macro ;ptr,index,flags
+  75                            ldy #\2
+  76                            lda (\1),y
+  77                            ora #\3
+  78                            sta (\1),y
+  79                            .endm
+  80                   
+  81                   clrflag  .macro ;ptr,index,flags
+  82                            ldy #\2
+  83                            lda (\1),y
+  84                            and #\3:$ff
+  85                            sta (\1),y
+  86                            .endm
+  87                   
+  88                   togflag  .macro ;ptr,index,flags
+  89                            ldy #\2
+  90                            lda (\1),y
+  91                            eor #\3
+  92                            sta (\1),y
+  93                            .endm
+  94                   
+  95                   ;---------------------------------------
+  96                   ;Setters and Getters
+  97                   
+  98                   setobj8  .macro ;ptr,offset,int8
+  99                            ldy #\2
+ 100                            lda #\3
+ 101                            sta (\1),y
+ 102                            .endm
+ 103                   
+ 104                   setobj16 .macro ;ptr,offset,int16
+ 105                            ldy #\2
+ 106                            lda #<\3
+ 107                            sta (\1),y
+ 108                            iny
+ 109                            lda #>\3
+ 110                            sta (\1),y
+ 111                            .endm
+ 112                   
+ 113                   setobjptr .macro ;ptr,offset,ptr
+ 114                            ldy #\2
+ 115                            lda \3
+ 116                            sta (\1),y
+ 117                            iny
+ 118                            lda \3+1
+ 119                            sta (\1),y
+ 120                            .endm
+ 121                   
+ 122                   setobjxy .macro ;ptr,offset,(RegWrd)
+ 123                            tya
+ 124                            ldy #\2+1
+ 125                            sta (\1),y
+ 126                            dey
+ 127                            txa
+ 128                            sta (\1),y
+ 129                            .endm
+ 130                   
+ 131                   rdobj16  .macro ;ptr,offset
+ 132                            ;RegPtr <- property
+ 133                            ldy #\2
+ 134                            lda (\1),y
+ 135                            tax
+ 136                            iny
+ 137                            lda (\1),y
+ 138                            tay
+ 139                            .endm
+ 140                   
+ 141                   getobj16 .macro ;ptr,offset,to
+ 142                            ;A <- property hi byte
+ 143                            ldy #\2+1  ;offset hi byte
+ 144                            lda (\1),y
+ 145                            pha
+ 146                            dey        ;offset lo byte
+ 147                            lda (\1),y
+ 148                            sta \3     ;Save lo byte
+ 149                            pla
+ 150                            sta \3+1   ;Save hi byte
+ 151                            .endm
+ 152                   
+ 153                   ;---------------------------------------
+ 154                   
+ 155                   pushxy   .macro
+ 156                            tya ;Hi
+ 157                            pha
+ 158                            txa ;Lo
+ 159                            pha
+ 160                            .endm
+ 161                   
+ 162                   pullxy   .macro
+ 163                            pla
+ 164                            tax ;Lo
+ 165                            pla
+ 166                            tay ;Hi
+ 167                            .endm
+ 168                   
+ 169                   push16   .macro ;word to put on stack
+ 170                            lda #>\1 ;Hi
+ 171                            pha
+ 172                            lda #<\1 ;Lo
+ 173                            pha
+ 174                            .endm
+ 175                   
+ 176                   pushptr  .macro ;ptr to put on stack
+ 177                            lda \1+1 ;Hi
+ 178                            pha
+ 179                            lda \1   ;Lo
+ 180                            pha
+ 181                            .endm
+ 182                   
+ 183                   pull16   .macro ;ptr to pull from stack
+ 184                            pla
+ 185                            sta \1   ;Lo
+ 186                            pla
+ 187                            sta \1+1 ;Hi
+ 188                            .endm
+ 189                   
+ 190                   ;---------------------------------------
+ 191                   
+ 192                   copy16   .macro ;word,dest
+ 193                            lda #<\1
+ 194                            sta \2   ;1st: lo byte
+ 195                            lda #>\1
+ 196                            sta \2+1 ;2nd: hi byte
+ 197                            .endm
+ 198                   
+ 199                   copyptr  .macro ;ptr,dest
+ 200                            lda \1
+ 201                            sta \2   ;1st: lo byte
+ 202                            lda \1+1
+ 203                            sta \2+1 ;2nd: hi byte
+ 204                            .endm
+ 205                   
+   5                   
+   6                           #inc_s "memory"
+   1                   ;----[ memory.s ]-----------------------
+   2                   
+   3                   ;Memory Mapping Routines
+   4                   seeram   = $02a7
+   5                   seeioker = $02ac
+   6                   
+   7                   ;Other bits can be used in the map for
+   8                   ;taken to mean that the OS allocated
+   9                   ;them, or that they are in the REU, etc.
+  10                   
+  11                   memmap   = $0800 ;$08a0 (pages $09->$a0)
+  12                   
+  13                   mapfree  = $00
+  14                   mapsys   = $01  ;Allocated by the system
+  15                   maputil  = $02  ;Allocated by the util
+  16                   mapapp   = $ff  ;Allocated by the app
+  17                   
+  18                   ;This is used so we don't have to pass
+  19                   ;the default memory pool into every call
+  20                   
+  21                   mempool  = $0380 ;Memory Pool Start Page
+  22                   
+  23                   ;Pages are allocated from the top down
+  24                   
+  25                   ;Page number of first page is configured
+  26                   ;and stored at mappgfst. But mappglst is
+  27                   ;static, it's always page #$09.
+  28                   
+  29                   mappgfst = $08a1 ;First Page (variable)
+  30                   mappglst = $09   ;Last  Page (constant)
+  31                   
+  32                   ;Memory Display Mode
+  33                   
+  34                   memdisp  = $08cc ;0=Pages,1=Kilobytes
+  35                   
+  36                   ;Struct
+  37                   mhfree   = 0 ;1 byte
+  38                   mhlen    = 1 ;2 bytes
+  39                   mhsize   = 3
+  40                   ;Malloc Header
+  41                   
+  42                   ;For realloc
+  43                   memsize  = $61 ;$62
+  44                   
+   7                           #inc_s "screen"
+   1                   palflag         = $02a6
+   2                   screen_cols     = $0028
+   3                   screen_rows     = $0019
+   4                   split           = $003f
+   5                   lastsplt        = $0040
+   6                   colhbuf         = $0300
+   7                   colmbuf         = $0302
+   8                   rvs_mask        = $0080
+   9                   sldraw          = $0000
+  10                   slmous          = $0002
+  11                   slkcmd          = $0004
+  12                   slkprt          = $0006
+  13                   slindx          = $0008
+  14                   slsize          = $0009
+  15                   current         = $0381
+  16                   layeridx        = $0096
+  17                   laydirtx        = $009f
+  18                   
+   8                           #inc_s "service"
+   1                   jiffylo         = $00a2
+   2                   jiffymi         = $00a1
+   3                   jiffyhi         = $00a0
+   4                   jcount          = $00cd
+   5                   jc_min          = $00eb
+   6                   sysjmp          = $0054
+   7                   jmpvec          = $0055
+   8                   raw_rts         = $02b2
+   9                   sec_rts         = $02b3
+  10                   clc_rts         = $02b5
+  11                   emptystr        = $02b7
+  12                   sysfref         = $02c0
+  13                   homebase        = $02e9
+  14                   evttime         = $02ff
+  15                   cpuusage        = $0217
+  16                   busychar        = $00e6
+  17                   loopbrkvec      = $0336
+  18                   appfileref      = $0338
+  19                   opnfileref      = $033a
+  20                   berrcode        = $03b9
+  21                   basicerr        = $08f0
+  22                   redirect        = $08f4
+  23                   redirectvec     = $08f9
+  24                   opnutilmcmd     = $03fa
+  25                   opnutilmdlo     = $03fb
+  26                   opnutilmdhi     = $03fc
+  27                   opnappmcmd      = $03fa
+  28                   opnappmdlo      = $03fb
+  29                   opnappmdhi      = $03fc
+  30                   syskvals        = $02b8
+  31                   syskmods        = $02bc
+  32                   himemuse        = $03fe
+  33                   hmemfree        = $0000
+  34                   hmemutil        = $0001
+  35                   hmembuff        = $0002
+  36                   hmembitm        = $0040
+  37                   hmemmult        = $0080
+  38                   redrawflgs      = $03ff
+  39                   rnewgfx         = $0001
+  40                   renagfx         = $0002
+  41                   rgraphix        = $0004
+  42                   rmodal          = $0008
+  43                   rstatbar        = $0010
+  44                   rcpubusy        = $0020
+  45                   rclock          = $0040
+  46                   rmenubar        = $0080
+  47                   libchrlo        = $08a2
+  48                   libchrhi        = $08ac
+  49                   libinfo         = $08b6
+  50                   liblocs         = $08c0
+  51                   slnoinit        = $0080
+  52                   slunload        = $0080
+  53                   
+   9                   
+  10                   
+  11                   
+  12                   .include "main.asm"
+   1                   
+   2                   
+   3                   jtable
+   4                   ;---------------------------------------
+   5                   
+   6                   .block 
+   7                   
+   8 1000 4c c1 10         jmp jlink       ; +$00 link             -> load driver
+   9 1003 4c d1 10         jmp junlink     ; +$03 unlink           -> unload driver 
+  10 1006 4c d2 10         jmp jsethand    ; +$06 sethand          -> config data handlers
+  11 1009 4c e9 10         jmp jpollget    ; +$09 pollget          -> check for data
+  12 100c 4c 87 11         jmp jdataget    ; +$0c dataget          -> get byte rcv/cmd buff
+  13 100f 4c b3 11         jmp jdataput    ; +$0f dataput          -> put byte snd buff 
+  14 1012 4c c7 11         jmp jsetrate    ; +$12 setrate          -> set baud rate
+  15 1015 4c 65 11         jmp jssidstat   ; +$15 ssidstat         -> join ssid (wifi)
+  16 1018 4c c9 11         jmp jopensock   ; +$18 opensock         -> open tcp socket
+  17 101b 4c 29 10         jmp jnone       ; +$1b nhdpause         -> pause nmi 
+  18 101e 4c 29 10         jmp jnone       ; +$1e hndresume        -> resume mni 
+  19                   
+  20                   .bend
+  21                   
+  22                   
+  23                   jsig
+  24                   ;---------------------------------------
+  25 1021 57 49 43 36  .text "wic64drv"
+     1025 34 44 52 56 
+  26                   
+  27                   
+  28                   jnone
+  29                   ;---------------------------------------
+  30                   
+  31                   .block
+  32                   
+  33                   .ifdef debug
+  34 1029 a9 0b        lda #11
+  35 102b 8d 20 d0     sta $d020
+  36 102e 20 ab 10     jsr delay
+  37                   .endif
+  38                   
+  39 1031 60               rts
+  40                   
+  41                   .bend 
+  42                   
+  43                   
+  44                   push_cmd_buff
+  45                   ;---------------------------------------
+  46                   ;
+  47                   ;   A -> byte to put in cmd buffer
+  48                   ;   C -> set when buffer is past $ff
+  49                   
+  50                   .block 
+  51                   
+  52 1032 ee 83 15         inc d_cmd_buff_sz
+  53 1035 ae 83 15         ldx d_cmd_buff_sz
+  54 1038 9d 93 15         sta d_cmd_buff, x
+  55                   
+  56 103b 60               rts 
+  57                   
+  58                   .bend 
+  59                   
+  60                   pop_cmd_buff
+  61                   ;---------------------------------------
+  62                   ;
+  63                   ;   A <- byte from the cmd buffer
+  64                   ;   C <- set when stack is now zero
+  65                   
+  66                   .block 
+  67                   
+  68 103c 18               clc
+  69 103d ee 73 15         inc d_cmd_buff_pos
+  70 1040 ae 73 15         ldx d_cmd_buff_pos
+  71 1043 bd 93 15         lda d_cmd_buff, x
+  72                       
+  73                       ; have we reached the end?
+  74                   
+  75 1046 ec 83 15         cpx d_cmd_buff_sz 
+  76 1049 d0 0f            bne return 
+  77                   
+  78                       ; reset buffer counters
+  79                   
+  80 104b 8d 5b 10         sta tempa
+  81                   
+  82 104e a9 00            lda #0
+  83 1050 8d 73 15         sta d_cmd_buff_pos
+  84 1053 8d 83 15         sta d_cmd_buff_sz
+  85 1056 38               sec
+  86                   
+  87 1057 ad 5b 10         lda tempa
+  88                   
+  89                   return
+  90                   
+  91 105a 60               rts 
+  92                   
+  93                   tempa 
+  94                   
+  95 105b 00               .byte 0
+  96                   
+  97                   .bend 
+  98                   
+  99                   
+ 100                   push_rcv_buff
+ 101                   ;---------------------------------------
+ 102                   ;
+ 103                   ;   A -> byte to put in rcv buffer
+ 104                   
+ 105                   .block 
+ 106                   
+ 107 105c ee 23 15         inc d_rcv_buff_sz
+ 108 105f ae 23 15         ldx d_rcv_buff_sz
+ 109 1062 9d 33 15         sta d_rcv_buff, x
+ 110                   
+ 111 1065 60               rts 
+ 112                   
+ 113                   .bend 
+ 114                   
+ 115                   
+ 116                   pop_rcv_buff
+ 117                   ;---------------------------------------
+ 118                   ;
+ 119                   ;   A <- byte from the cmd buffer
+ 120                   ;   C <- set when stack is now zero
+ 121                   
+ 122                   .block 
+ 123                   
+ 124 1066 18               clc
+ 125 1067 ee 13 15         inc d_rcv_buff_pos
+ 126 106a ae 13 15         ldx d_rcv_buff_pos
+ 127 106d bd 33 15         lda d_rcv_buff, x
+ 128                       
+ 129                       ; have we reached the end?
+ 130                   
+ 131 1070 ec 23 15         cpx d_rcv_buff_sz 
+ 132 1073 d0 0f            bne return 
+ 133                   
+ 134                       ; reset buffer counters
+ 135                   
+ 136 1075 8d 85 10         sta tempa
+ 137                   
+ 138 1078 a9 00            lda #0
+ 139 107a 8d 13 15         sta d_rcv_buff_pos
+ 140 107d 8d 23 15         sta d_rcv_buff_sz
+ 141 1080 38               sec
+ 142                   
+ 143 1081 ad 85 10         lda tempa
+ 144                   
+ 145                   return
+ 146                   
+ 147 1084 60               rts 
+ 148                   
+ 149                   tempa 
+ 150                   
+ 151 1085 00               .byte 0
+ 152                   
+ 153                   .bend 
+ 154                   
+ 155                   push_snd_buff
+ 156                   ;---------------------------------------
+ 157                   ;
+ 158                   ;   A -> byte to put in snd buffer
+ 159                   
+ 160                   .block 
+ 161                   
+ 162 1086 ee c3 14         inc d_snd_buff_sz
+ 163 1089 ae c3 14         ldx d_snd_buff_sz
+ 164 108c 9d d3 14         sta d_snd_buff, x
+ 165                   
+ 166 108f 60               rts 
+ 167                   
+ 168                   .bend 
+ 169                   
+ 170                   
+ 171                   flush_snd_buff
+ 172                   ;---------------------------------------
+ 173                   ;
+ 174                   ;   A -> byte to put in snd buffer
+ 175                   
+ 176                   .block
+ 177                   
+ 178                       ; add zero byte to end 
+ 179                   
+ 180 1090 a9 00            lda #0
+ 181 1092 20 86 10         jsr push_snd_buff 
+ 182                   
+ 183                       ; reset buffer pointers
+ 184                   
+ 185 1095 8d b3 14         sta d_snd_buff_pos
+ 186 1098 8d c3 14         sta d_snd_buff_sz
+ 187                   
+ 188                       ; call wic64 send 
+ 189                   
+ 190 109b a9 23            lda #WC_TCP_WRITE
+ 191 109d a2 d4            ldx #<d_snd_buff + 1
+ 192 109f a0 14            ldy #>d_snd_buff + 1
+ 193 10a1 20 87 12         jsr wic64_do_send_command_with_payload
+ 194                   
+ 195                       ; wait for response
+ 196                   
+ 197                       #w_rcv_dat
+  88                   
+  89 10a4 a2 13            ldx #<wic64_payload
+  90 10a6 a0 14            ldy #>wic64_payload
+  91                       
+  92 10a8 20 19 13         jsr wic64_do_recv_data
+  93                   
+ 198                   
+ 199                   
+ 200                   .bend 
+ 201                   
+ 202                   
+ 203                   delay 
+ 204                   ;---------------------------------------
+ 205                   
+ 206                   .block 
+ 207                   
+ 208 10ab a9 02                lda #$02
+ 209 10ad 8d b7 10             sta period+1
+ 210                   
+ 211 10b0 a9 00                lda #0
+ 212 10b2 85 a2                sta jiffylo
+ 213                   
+ 214                           next     
+ 215                           
+ 216 10b4 a5 a2                lda jiffylo
+ 217                           period   
+ 218                           
+ 219 10b6 c9 01                cmp #1  
+ 220                           
+ 221 10b8 90 fa                bcc next
+ 222                   
+ 223 10ba 60                   rts 
+ 224                   
+ 225                   .bend 
+ 226                   
+ 227                   
+ 228                   mode_carrier
+ 229                   ;---------------------------------------
+ 230                   
+ 231 10bb 4c b2 02         jmp raw_rts 
+ 232                   
+ 233                   mode_command 
+ 234                   ;---------------------------------------
+ 235                   
+ 236 10be 4c b2 02         jmp raw_rts 
+ 237                   
+  13                   
+  14                   .include "vars.asm"
+   1                   ;---------------------------------------
+   2                   ; pointer storage
+   3                   
+   4                   sptr           .var $61 ;$62
+   5                   ptr            .var $63 ;$64
+   6                   
+  15                   
+  16                   .include "jlink.asm"
+   1                   jlink
+   2                   ;---------------------------------------
+   3                   ;
+   4                   
+   5                   .block 
+   6                   
+   7                   .ifdef debug
+   8 10c1 a9 00        lda #0
+   9 10c3 8d 20 d0     sta $d020
+  10 10c6 20 ab 10     jsr delay
+  11                   .endif
+  12                   
+  13                   ; init external calls like pet2asc 
+  14                   
+  15                       #ldxy extern
+   9 10c9 a2 03                 ldx #<\1
+  10 10cb a0 16                 ldy #>\1
+  16 10cd 20 fc 02         jsr initextern
+  17                   
+  18                   end 
+  19                   
+  20 10d0 60               rts
+  21                   
+  22                   .bend
+  23                   
+  17                   .include "junlink.asm"
+   1                   
+   2                   junlink
+   3                   ;---------------------------------------
+   4                   ;
+   5                   .block
+   6                   
+   7 10d1 60               rts 
+   8                   
+   9                   .bend
+  10                   
+  18                   .include "jsethand.asm"
+   1                   jsethand
+   2                   ;---------------------------------------
+   3                   ;
+   4                   ; C <- set for command handler 
+   5                   ; C <- not set for carrier handler
+   6                   
+   7                   .block 
+   8                   
+   9 10d2 a9 01            lda #1
+  10 10d4 8d 20 d0         sta $d020
+  11                   
+  12 10d7 90 08            bcc set_command 
+  13                   
+  14                   set_carrier
+  15                   
+  16                       #stxy mode_carrier+1
+  14 10d9 8e bc 10              stx \1
+  15 10dc 8c bd 10              sty \1+1
+  17 10df 38               sec
+  18 10e0 60               rts 
+  19                   
+  20                   set_command
+  21                   
+  22                       #stxy mode_command+1
+  14 10e1 8e bf 10              stx \1
+  15 10e4 8c c0 10              sty \1+1
+  23 10e7 38               sec
+  24 10e8 60               rts 
+  25                   
+  26                   .bend
+  27                   
+  28                   
+  29                   
+  19                   .include "jpollget.asm"
+   1                   jpollget
+   2                   ;---------------------------------------
+   3                   ;
+   4                   
+   5                   .block 
+   6                   
+   7                   .ifdef debug
+   8 10e9 a9 04        lda #4
+   9 10eb 8d 20 d0     sta $d020
+  10 10ee 20 ab 10     jsr delay
+  11                   .endif
+  12                   
+  13                   chk_cmd_buff
+  14                   
+  15 10f1 ad 83 15         lda d_cmd_buff_sz
+  16 10f4 f0 0b            beq chk_snd_buff
+  17 10f6 4c 51 11         jmp do_cmd_buff
+  18                   
+  19                   chk_wic_buff
+  20                   
+  21 10f9 ad b3 15         lda d_payload_sz 
+  22 10fc f0 03            beq chk_snd_buff
+  23 10fe 4c 55 11         jmp do_wic_buff
+  24                   
+  25                   chk_snd_buff
+  26                   
+  27 1101 ad c3 14         lda d_snd_buff_sz
+  28 1104 f0 03            beq chk_wic_pay
+  29 1106 4c 59 11         jmp do_snd_buff
+  30                   
+  31                   chk_wic_pay
+  32                   
+  33                       ; check network status
+  34                       ; 
+  35                       ; todo: i think this is a hack
+  36                   
+  37 1109 ad 45 02         lda $0245
+  38 110c c9 3f            cmp #$3f 
+  39 110e d0 40            bne end 
+  40                   
+  41                   .ifdef debug
+  42 1110 a9 0a        lda #10
+  43 1112 8d 20 d0     sta $d020
+  44 1115 20 ab 10     jsr delay
+  45                   .endif
+  46                   
+  47 1118 a9 00            lda #0
+  48 111a 8d c3 15         sta w_payload 
+  49 111d 8d c4 15         sta w_payload + 1
+  50                   
+  51                       ; payload available?
+  52                   
+  53 1120 a9 30            lda #WC_TCP_AVAIL
+  54 1122 20 6f 12         jsr wic64_do_send_command
+  55                   
+  56 1125 a2 c3            ldx #<w_payload
+  57 1127 a0 15            ldy #>w_payload
+  58 1129 20 ab 10         jsr delay
+  59 112c 20 19 13         jsr wic64_do_recv_data
+  60                   
+  61                       ; any data?
+  62                   
+  63 112f ad c3 15         lda w_payload
+  64 1132 d0 08            bne wic_read
+  65 1134 ad c4 15         lda w_payload + 1
+  66 1137 d0 03            bne wic_read
+  67 1139 4c 50 11         jmp end
+  68                   
+  69                       ; get payload size 
+  70                   
+  71                   wic_read
+  72                   
+  73                       ; store payload in rcv buffer 
+  74                   
+  75 113c a9 22            lda #WC_TCP_READ
+  76 113e 20 6f 12         jsr wic64_do_send_command
+  77                   
+  78                       ; get header 
+  79                   
+  80 1141 20 ab 10         jsr delay
+  81 1144 20 ef 12         jsr wic64_do_recv_header
+  82 1147 8d a3 15         sta d_payload_sts
+  83 114a 8e b3 15         stx d_payload_sz
+  84 114d 8c b4 15         sty d_payload_sz + 1
+  85                   
+  86                   end
+  87                   
+  88 1150 60               rts 
+  89                   
+  90                   do_cmd_buff
+  91                   
+  92 1151 18               clc 
+  93 1152 4c bb 10         jmp mode_carrier
+  94                   
+  95                   do_wic_buff
+  96                   
+  97 1155 38               sec 
+  98 1156 4c bb 10         jmp mode_carrier
+  99                   
+ 100                   do_snd_buff
+ 101                   
+ 102 1159 8d 64 11         sta tempa
+ 103 115c 20 90 10         jsr flush_snd_buff
+ 104 115f ad 64 11         lda tempa
+ 105                   
+ 106 1162 18               clc
+ 107 1163 60               rts 
+ 108                   
+ 109                   tempa 
+ 110                   tempx
+ 111                   
+ 112 1164 00               .byte 0
+ 113                   
+ 114                   
+ 115                   .bend
+ 116                   
+ 117                   
+ 118                   
+  20                   .include "jssidstat.asm"
+   1                   jssidstat
+   2                   ;---------------------------------------
+   3                   ;
+   4                   ;   C -> set to read ssid
+   5                   ;   C -> not set to join ssid (wifi)
+   6                   
+   7                   .block 
+   8                   
+   9 1165 90 14            bcc read_ssid
+  10                   
+  11                   join_ssid 
+  12                   
+  13                   ; todo: connect to wifi
+  14                   
+  15                   ; todo: check connected status
+  16                   
+  17                   ; set ack command to network
+  18                   
+  19                   .ifdef debug
+  20 1167 a9 02        lda #2
+  21 1169 8d 20 d0     sta $d020
+  22 116c 20 ab 10     jsr delay
+  23                   .endif
+  24                   
+  25 116f a9 30            lda #"0"
+  26 1171 20 32 10         jsr push_cmd_buff
+  27 1174 a9 0d            lda #$0d
+  28 1176 20 32 10         jsr push_cmd_buff
+  29                   
+  30 1179 18               clc 
+  31 117a 60               rts
+  32                   
+  33                   read_ssid 
+  34                   
+  35                   .ifdef debug
+  36 117b a9 02        lda #2
+  37 117d 8d 20 d0     sta $d020
+  38 1180 20 ab 10     jsr delay
+  39                   .endif
+  40                   
+  41 1183 a9 00            lda #0
+  42 1185 38               sec 
+  43 1186 60               rts 
+  44                   
+  45                   .bend
+  46                   
+  21                   .include "jdataget.asm"
+   1                   jdataget
+   2                   ;---------------------------------------
+   3                   ;
+   4                   ;   A <- byte from buffer 
+   5                   ;   C <- set when no data 
+   6                   ;   C <- clear when there is data
+   7                   
+   8                   .block
+   9                   
+  10 1187 8e b2 11         stx tempx
+  11                   
+  12                   chk_cmd_buff
+  13                   
+  14 118a ad 83 15         lda d_cmd_buff_sz
+  15 118d f0 03            beq chk_wic_buff 
+  16 118f 4c 9c 11         jmp do_cmd_buff 
+  17                   
+  18                   chk_wic_buff
+  19                   
+  20 1192 ad b3 15         lda d_payload_sz
+  21 1195 f0 03            beq return 
+  22 1197 4c a4 11         jmp do_wic_buff
+  23                   
+  24                   return 
+  25                   
+  26 119a 38               sec ; <- no data
+  27 119b 60               rts
+  28                   
+  29                   
+  30                   do_cmd_buff 
+  31                   
+  32 119c 20 3c 10         jsr pop_cmd_buff
+  33 119f ae b2 11         ldx tempx
+  34 11a2 18               clc 
+  35 11a3 60               rts
+  36                   
+  37                   do_wic_buff 
+  38                   
+  39 11a4 20 4b 12         jsr wic64_do_recv_mode
+  40 11a7 20 59 12         jsr wic64_read_byte
+  41 11aa ce b3 15         dec d_payload_sz
+  42 11ad ae b2 11         ldx tempx
+  43 11b0 18               clc 
+  44 11b1 60               rts
+  45                   
+  46                   tempx
+  47                   
+  48 11b2 00               .byte 0
+  49                   
+  50                   .bend
+  51                   
+  22                   .include "jdataput.asm"
+   1                   jdataput
+   2                   ;---------------------------------------
+   3                   ;
+   4                   ;   A -> byte to push
+   5                   
+   6                   .block
+   7                   
+   8 11b3 8e c6 11         stx tempx
+   9                   
+  10                       ; push next byte to send buffer 
+  11                   
+  12 11b6 20 86 10         jsr push_snd_buff
+  13                   
+  14                   .ifdef debug
+  15 11b9 a9 06        lda #6
+  16 11bb 8d 20 d0     sta $d020
+  17 11be 20 ab 10     jsr delay
+  18                   .endif
+  19                   
+  20                   
+  21 11c1 ae c6 11         ldx tempx 
+  22                       
+  23 11c4 18               clc 
+  24 11c5 60               rts 
+  25                   
+  26                   tempx 
+  27                   
+  28 11c6 00               .byte 0
+  29                   
+  30                   .bend 
+  31                   
+  23                   .include "jsetrate.asm"
+   1                   jsetrate
+   2                   ;---------------------------------------
+   3                   
+   4                   .block 
+   5                   
+   6 11c7 18               clc
+   7 11c8 60               rts 
+   8                   
+   9                   .bend 
+  10                   
+  24                   .include "jopensock.asm"
+   1                   jopensock
+   2                   ;---------------------------------------
+   3                   ;
+   4                   
+   5                   .block 
+   6                   
+   7                       ; get cnp host info
+   8                       
+   9                       #stxy !ptr 
+  14 11c9 86 63                 stx \1
+  15 11cb 84 64                 sty \1+1
+  10                   
+  11 11cd a0 00            ldy #tcp_host
+  12 11cf b1 63            lda (!ptr),y 
+  13 11d1 8d 61 00         sta !sptr+0
+  14 11d4 c8               iny 
+  15 11d5 b1 63            lda (!ptr),y 
+  16 11d7 8d 62 00         sta !sptr+1
+  17                   
+  18 11da a2 00            ldx #0
+  19 11dc a0 00            ldy #0
+  20                   
+  21                       l1
+  22                   
+  23 11de b1 61            lda (!sptr),Y
+  24 11e0 f0 0a            beq el1
+  25 11e2 20 0c 16         jsr pet2asc 
+  26 11e5 9d c3 15         sta w_payload,x
+  27 11e8 e8               inx 
+  28 11e9 c8               iny 
+  29 11ea d0 f2            bne l1
+  30                   
+  31                       el1
+  32                   
+  33 11ec a9 3a            lda #":"
+  34 11ee 9d c3 15         sta w_payload,x 
+  35 11f1 e8               inx
+  36                       
+  37 11f2 a0 02            ldy #tcp_port 
+  38 11f4 b1 63            lda (!ptr),y 
+  39 11f6 8d 61 00         sta !sptr+0
+  40 11f9 c8               iny 
+  41 11fa b1 63            lda (!ptr),y 
+  42 11fc 8d 62 00         sta !sptr+1
+  43                   
+  44 11ff a0 00            ldy #0
+  45                   
+  46                       l2 
+  47                   
+  48 1201 b1 61            lda (!sptr),y
+  49 1203 f0 07            beq el2
+  50 1205 9d c3 15         sta w_payload,x
+  51 1208 e8               inx 
+  52 1209 c8               iny
+  53 120a d0 f5            bne l2
+  54                   
+  55                       el2 
+  56                   
+  57 120c a9 00            lda #0
+  58 120e 9d c3 15         sta w_payload,x
+  59                   
+  60                   
+  61                       ; connect to host 
+  62                   
+  63                       
+  64 1211 a9 21            lda #WC_TCP_OPEN
+  65 1213 a2 c3            ldx #<w_payload
+  66 1215 a0 15            ldy #>w_payload
+  67 1217 20 87 12         jsr wic64_do_send_command_with_payload
+  68                   
+  69                       #w_rcv_dat
+  88                   
+  89 121a a2 13            ldx #<wic64_payload
+  90 121c a0 14            ldy #>wic64_payload
+  91                       
+  92 121e 20 19 13         jsr wic64_do_recv_data
+  93                   
+  70                   
+  71                       ; set ack command to network
+  72                   
+  73                   .ifdef debug
+  74 1221 a9 05        lda #5
+  75 1223 8d 20 d0     sta $d020
+  76 1226 20 ab 10     jsr delay
+  77                   .endif
+  78                   
+  79 1229 a9 31            lda #"1"
+  80 122b 20 32 10         jsr push_cmd_buff
+  81 122e a9 0d            lda #$0d
+  82 1230 20 32 10         jsr push_cmd_buff
+  83                   
+  84 1233 18               clc 
+  85 1234 60               rts
+  86                   
+  87                   .bend
+  88                   
+  25                   
+  26                   .include "wic64.asm"
+   1                   
+   2                   ; switch wic64 to send mode (wic receives command)
+   3                   ; ---------------------------------------------------------
+   4                       wic64_do_send_mode
+   5                   
+   6                           .block
+   7                   
+   8 1235 ad 02 dd             lda ddra 
+   9 1238 09 04                ora #$04 
+  10 123a 8d 02 dd             sta ddra 
+  11                   
+  12 123d ad 00 dd             lda porta 
+  13 1240 09 04                ora #$04 
+  14 1242 8d 00 dd             sta porta 
+  15                   
+  16 1245 a9 ff                lda #$ff 
+  17 1247 8d 03 dd             sta ddrb 
+  18                   
+  19 124a 60                   rts
+  20                   
+  21                           .bend
+  22                   
+  23                   ; switch wic64 to transmit mode (wic sends data)
+  24                   ; ---------------------------------------------------------
+  25                       wic64_do_recv_mode
+  26                   
+  27                           .block 
+  28                   
+  29 124b a9 00                lda #$00
+  30 124d 8d 03 dd             sta ddrb 
+  31 1250 ad 00 dd             lda porta 
+  32 1253 29 fb                and #251 
+  33 1255 8d 00 dd             sta porta 
+  34                   
+  35 1258 60                   rts
+  36                   
+  37                           .bend
+  38                   
+  39                   ; read byte from wic64
+  40                   ; ---------------------------------------------------------
+  41                   
+  42                       wic64_read_byte
+  43                   
+  44                           .block
+  45                   
+  46 1259 ad 0d dd             lda icr 
+  47 125c 29 10                and #$10 
+  48 125e f0 f9                beq wic64_read_byte
+  49 1260 ad 01 dd             lda portb 
+  50 1263 60                   rts
+  51                   
+  52                           .bend 
+  53                   
+  54                   ; write byte to wic64 
+  55                   ; ---------------------------------------------------------
+  56                       wic64_write_byte
+  57                   
+  58                           .block
+  59                   
+  60 1264 8d 01 dd             sta portb 
+  61                   
+  62                       dowrite
+  63                   
+  64 1267 ad 0d dd             lda icr
+  65 126a 29 10                and #$10
+  66 126c f0 f9                beq dowrite
+  67                   
+  68 126e 60                   rts
+  69                   
+  70                           .bend 
+  71                   
+  72                   ; send wic64 command
+  73                   ; ---------------------------------------------------------
+  74                   ;
+  75                   ;   Sends a command without a Payload to the Wic64.
+  76                   ;
+  77                   ;   Parameters:
+  78                   ;
+  79                   ;       .A  wic64 command 
+  80                   ;
+  81                   
+  82                       wic64_do_send_command
+  83                   
+  84                           .block 
+  85                   
+  86                           ; store the command 
+  87                   
+  88 126f 48                   pha 
+  89                   
+  90 1270 20 35 12             jsr wic64_do_send_mode
+  91                   
+  92                           ; send 4 byte command to get the ip address
+  93                   
+  94 1273 a9 52                lda #"r"                ; protocol
+  95 1275 20 64 12             jsr wic64_write_byte
+  96 1278 68                   pla                     ; command
+  97 1279 20 64 12             jsr wic64_write_byte
+  98 127c a9 00                lda #$00                ; payload low
+  99 127e 20 64 12             jsr wic64_write_byte
+ 100 1281 a9 00                lda #$00                ; payload high
+ 101 1283 20 64 12             jsr wic64_write_byte
+ 102                   
+ 103 1286 60                   rts
+ 104                   
+ 105                           .bend
+ 106                   
+ 107                   
+ 108                   ; send wic64 command with payload
+ 109                   ; ---------------------------------------------------------
+ 110                   ;
+ 111                   ;   Sends a command with a Payload to the Wic64.
+ 112                   ;
+ 113                   ;   Parameters:
+ 114                   ;
+ 115                   ;       .A  wic64 command 
+ 116                   ;       .X  pointer to payload low byte 
+ 117                   ;       .Y  pointer to payload high byte 
+ 118                   
+ 119                       wic64_do_send_command_with_payload
+ 120                   
+ 121                           .block 
+ 122                   
+ 123 1287 48                   pha
+ 124                   
+ 125                           ; get payload size 
+ 126                   
+ 127 1288 a9 00                lda #$00
+ 128 128a 8d f3 13             sta wic64_payload_size
+ 129 128d 8d f4 13             sta wic64_payload_size + 1
+ 130                   
+ 131 1290 8a                   txa
+ 132 1291 85 fa                sta $fa 
+ 133 1293 98                   tya
+ 134 1294 85 fb                sta $fb
+ 135                   
+ 136 1296 a0 00                ldy #$00
+ 137                   
+ 138                       loop1
+ 139                   
+ 140 1298 b1 fa                lda ($fa),y
+ 141 129a f0 0b                beq send
+ 142                   
+ 143 129c ee f3 13             inc wic64_payload_size
+ 144 129f d0 03                bne next
+ 145 12a1 ee f4 13             inc wic64_payload_size + 1
+ 146                   
+ 147                       next
+ 148                   
+ 149 12a4 c8                   iny
+ 150                   
+ 151 12a5 d0 f1                bne loop1
+ 152                   
+ 153                       send
+ 154                           
+ 155 12a7 20 35 12             jsr wic64_do_send_mode
+ 156                   
+ 157                           ; send command to wic64 with payload 
+ 158                   
+ 159 12aa a9 52                lda #"r"                        ; protocol
+ 160 12ac 20 64 12             jsr wic64_write_byte
+ 161 12af 68                   pla                             ; command
+ 162 12b0 20 64 12             jsr wic64_write_byte
+ 163 12b3 ad f3 13             lda wic64_payload_size          ; payload low
+ 164 12b6 20 64 12             jsr wic64_write_byte
+ 165 12b9 ad f4 13             lda wic64_payload_size + 1      ; payload high
+ 166 12bc 20 64 12             jsr wic64_write_byte
+ 167                   
+ 168 12bf a0 00                ldy #$00
+ 169                   
+ 170                       loop2
+ 171                   
+ 172 12c1 b1 fa                lda ($fa),y
+ 173 12c3 f0 06                beq done 
+ 174 12c5 20 64 12             jsr wic64_write_byte
+ 175 12c8 c8                   iny 
+ 176 12c9 d0 f6                bne loop2
+ 177                   
+ 178                       done
+ 179                   
+ 180 12cb 60                   rts
+ 181                   
+ 182                           .bend
+ 183                   
+ 184                   
+ 185                   ; ---------------------------------------------------------
+ 186                   ;
+ 187                   ;   Wait for Wic64 to return data.
+ 188                   
+ 189                   wic64_do_wait_return
+ 190                   
+ 191                       .block
+ 192                   
+ 193 12cc a9 00            lda #$00
+ 194 12ce 8d 97 13         sta c1
+ 195 12d1 a9 00            lda #$00 
+ 196 12d3 8d 98 13         sta c2
+ 197                   
+ 198 12d6 a9 10            lda #$10
+ 199 12d8 2c 0d dd         bit $dd0d
+ 200 12db d0 11            bne success
+ 201                   
+ 202 12dd a9 10            lda #$10
+ 203                   
+ 204                   wait 
+ 205                   
+ 206 12df 2c 0d dd         bit $dd0d
+ 207 12e2 d0 0a            bne success
+ 208                   
+ 209 12e4 ce 98 13         dec c2
+ 210 12e7 d0 f6            bne wait
+ 211 12e9 ce 97 13         dec c1
+ 212 12ec d0 f1            bne wait
+ 213                   
+ 214                   success
+ 215                   
+ 216 12ee 60               rts        
+ 217                   
+ 218                       .bend
+ 219                   
+ 220                   ; ---------------------------------------------------------
+ 221                   ;
+ 222                   ;   Receives the header from the Wic64 and
+ 223                   ;   stores the payload size.
+ 224                   ;
+ 225                   ;   Parameters:
+ 226                   ;
+ 227                   ;   Affects:
+ 228                   ;
+ 229                   ;       .A  header status 
+ 230                   ;       .X  header size low 
+ 231                   ;       .Y  header size high 
+ 232                   
+ 233                   wic64_do_recv_header
+ 234                   
+ 235                       .block
+ 236                   
+ 237                       ; wait for data
+ 238                   
+ 239 12ef 20 cc 12         jsr wic64_do_wait_return
+ 240                   
+ 241                       ; put wic64 into receive mode
+ 242                   
+ 243 12f2 20 4b 12         jsr wic64_do_recv_mode
+ 244                   
+ 245                       ; read dummy byte 
+ 246                   
+ 247 12f5 20 59 12         jsr wic64_read_byte
+ 248                   
+ 249                       ; get status and store it
+ 250                   
+ 251 12f8 20 59 12         jsr wic64_read_byte
+ 252 12fb 8d 16 13         sta temp
+ 253                   
+ 254                       ; get payload low
+ 255                   
+ 256 12fe 20 59 12         jsr wic64_read_byte
+ 257 1301 8d 17 13         sta temp + 1
+ 258                   
+ 259                       ; get payload hi
+ 260                   
+ 261 1304 20 59 12         jsr wic64_read_byte
+ 262 1307 8d 18 13         sta temp + 2
+ 263                   
+ 264 130a ad 18 13         lda temp + 2
+ 265 130d a8               tay 
+ 266 130e ad 17 13         lda temp + 1
+ 267 1311 aa               tax 
+ 268 1312 ad 16 13         lda temp
+ 269                   
+ 270 1315 60               rts 
+ 271                   
+ 272                   temp
+ 273                   
+ 274 1316 00 00 00         .byte 0,0,0
+ 275                   
+ 276                       .bend 
+ 277                   
+ 278                   
+ 279                   ; ---------------------------------------------------------
+ 280                   ;
+ 281                   ;   Receives data from Wic64 and stores in
+ 282                   ;   requested storage location.
+ 283                   ;
+ 284                   ;   Parameters:
+ 285                   ;
+ 286                   ;       .X  pointer to data low byte 
+ 287                   ;       .Y  pointer to data high byte 
+ 288                   
+ 289                       wic64_do_recv_data
+ 290                   
+ 291                           .block 
+ 292                   
+ 293                           ; ???
+ 294                   
+ 295 1319 8e 95 13             stx ptr_payload 
+ 296 131c 8c 96 13             sty ptr_payload + 1
+ 297                   
+ 298 131f a9 00                lda #$00
+ 299 1321 8d 97 13             sta c1
+ 300 1324 a9 00                lda #$00 
+ 301 1326 8d 98 13             sta c2
+ 302                   
+ 303 1329 a9 10                lda #$10
+ 304 132b 2c 0d dd             bit $dd0d
+ 305 132e d0 12                bne success
+ 306                   
+ 307 1330 a9 10                lda #$10
+ 308                   
+ 309                           wait 
+ 310                   
+ 311 1332 2c 0d dd             bit $dd0d
+ 312 1335 d0 0b                bne success
+ 313                   
+ 314 1337 ce 98 13             dec c2
+ 315 133a d0 f6                bne wait
+ 316 133c ce 97 13             dec c1
+ 317 133f d0 f1                bne wait
+ 318                   
+ 319 1341 60                   rts        
+ 320                   
+ 321                           success
+ 322                   
+ 323 1342 20 4b 12             jsr wic64_do_recv_mode
+ 324                   
+ 325                           ; read dummy byte 
+ 326                   
+ 327 1345 20 59 12             jsr wic64_read_byte
+ 328                   
+ 329                           ; get status and store it
+ 330                   
+ 331 1348 20 59 12             jsr wic64_read_byte
+ 332 134b 8d e3 13             sta wic64_status
+ 333                   
+ 334                           ; get payload low
+ 335                   
+ 336 134e 20 59 12             jsr wic64_read_byte
+ 337 1351 a8                   tay
+ 338 1352 8d f3 13             sta wic64_payload_size 
+ 339                   
+ 340                           ; get payload hi
+ 341                   
+ 342 1355 20 59 12             jsr wic64_read_byte
+ 343 1358 aa                   tax 
+ 344 1359 8d f4 13             sta wic64_payload_size + 1
+ 345                   
+ 346                           ; no data check 
+ 347                   
+ 348 135c 18                   clc
+ 349                   
+ 350 135d c0 00                cpy #$00
+ 351 135f d0 06                bne recv
+ 352 1361 e0 00                cpx #$00
+ 353 1363 d0 02                bne recv
+ 354                   
+ 355 1365 38                   sec 
+ 356                   
+ 357 1366 60                   rts
+ 358                   
+ 359                       recv 
+ 360                   
+ 361                           ; save payload size 
+ 362                   
+ 363 1367 ad f3 13             lda wic64_payload_size
+ 364 136a 8d 03 14             sta wic64_payload_work
+ 365                   
+ 366 136d ad f4 13             lda wic64_payload_size + 1
+ 367 1370 8d 04 14             sta wic64_payload_work + 1
+ 368                   
+ 369                           ; store payload for later 
+ 370                   
+ 371 1373 ad 95 13             lda ptr_payload
+ 372 1376 85 fa                sta $fa 
+ 373 1378 ad 96 13             lda ptr_payload + 1
+ 374 137b 85 fb                sta $fb 
+ 375                   
+ 376 137d a0 00                ldy #$00
+ 377                   
+ 378                       recv_data
+ 379                   
+ 380 137f 20 59 12             jsr wic64_read_byte 
+ 381 1382 91 fa                sta ($fa),y
+ 382 1384 c8                   iny
+ 383 1385 ce 03 14             dec wic64_payload_work
+ 384 1388 d0 f5                bne recv_data
+ 385 138a ce 04 14             dec wic64_payload_work + 1
+ 386 138d ad 04 14             lda wic64_payload_work + 1
+ 387 1390 c9 ff                cmp #$ff
+ 388 1392 d0 eb                bne recv_data
+ 389                   
+ 390 1394 60                   rts 
+ 391                   
+ 392                   ptr_payload
+ 393                   
+ 394 1395 00 00            .word 0
+ 395                   
+ 396                           .bend
+ 397                   
+ 398 1397 00           c1 .byte 0
+ 399 1398 00           c2 .byte 0
+ 400                   
+ 401                   
+ 402 1399 57 49 43 36  .text "wic64-data"
+     139d 34 2d 44 41 
+     13a1 54 41 
+ 403                   
+ 404                   wic64_call_bits         ; 1
+ 405                   
+ 406 13a3 00 00 00 00      .repeat 16,0
+     13a7 00 00 00 00 
+     13ab 00 00 00 00 
+     13af 00 00 00 00 
+ 407                   
+ 408                   wic64_online            ; 2
+ 409                   
+ 410 13b3 00 00 00 00      .repeat 16,0
+     13b7 00 00 00 00 
+     13bb 00 00 00 00 
+     13bf 00 00 00 00 
+ 411                   
+ 412                   wic64_payload_index     ; 3
+ 413                   
+ 414 13c3 00 00 00 00      .repeat 16,0
+     13c7 00 00 00 00 
+     13cb 00 00 00 00 
+     13cf 00 00 00 00 
+ 415                   
+ 416                   wic64_payload_buff      ; 4
+ 417                   
+ 418 13d3 00 00 00 00      .repeat 16,0
+     13d7 00 00 00 00 
+     13db 00 00 00 00 
+     13df 00 00 00 00 
+ 419                   
+ 420                   wic64_status            ; 5
+ 421                   
+ 422 13e3 00 00 00 00      .repeat 16,0
+     13e7 00 00 00 00 
+     13eb 00 00 00 00 
+     13ef 00 00 00 00 
+ 423                   
+ 424                   wic64_payload_size      ; 6
+ 425                   
+ 426 13f3 00 00 00 00      .repeat 16,0
+     13f7 00 00 00 00 
+     13fb 00 00 00 00 
+     13ff 00 00 00 00 
+ 427                   
+ 428                   wic64_payload_work      ; 7
+ 429                   
+ 430 1403 00 00 00 00      .repeat 16,0
+     1407 00 00 00 00 
+     140b 00 00 00 00 
+     140f 00 00 00 00 
+ 431                   
+ 432                   wic64_payload           ; 8
+ 433                   
+ 434 1413 00 00 00 00      .repeat 64,0
+     1417 00 00 00 00 
+     141b 00 00 00 00 
+     141f 00 00 00 00 
+     1423 00 00 00 00 
+     1427 00 00 00 00 
+     142b 00 00 00 00 
+     142f 00 00 00 00 
+     1433 00 00 00 00 
+     1437 00 00 00 00 
+     143b 00 00 00 00 
+     143f 00 00 00 00 
+     1443 00 00 00 00 
+     1447 00 00 00 00 
+     144b 00 00 00 00 
+     144f 00 00 00 00 
+ 435                   
+ 436                   wic64_payload_os_index  ; 12
+ 437                   
+ 438 1453 00 00 00 00      .repeat 16,0
+     1457 00 00 00 00 
+     145b 00 00 00 00 
+     145f 00 00 00 00 
+ 439                   
+ 440                   wic64_payload_os        ; 13
+ 441                   
+ 442 1463 00 00 00 00      .repeat 64,0
+     1467 00 00 00 00 
+     146b 00 00 00 00 
+     146f 00 00 00 00 
+     1473 00 00 00 00 
+     1477 00 00 00 00 
+     147b 00 00 00 00 
+     147f 00 00 00 00 
+     1483 00 00 00 00 
+     1487 00 00 00 00 
+     148b 00 00 00 00 
+     148f 00 00 00 00 
+     1493 00 00 00 00 
+     1497 00 00 00 00 
+     149b 00 00 00 00 
+     149f 00 00 00 00 
+ 443                   
+ 444                   wic64_command_mode      ; 16
+ 445                   
+ 446 14a3 00 00 00 00      .repeat 16,0
+     14a7 00 00 00 00 
+     14ab 00 00 00 00 
+     14af 00 00 00 00 
+ 447                   
+  27                   
+  28                   .include "data.asm"
+   1                   ; send buffer position
+   2                   
+   3                   d_snd_buff_pos
+   4                   
+   5 14b3 00 00 00 00      .repeat 16,0
+     14b7 00 00 00 00 
+     14bb 00 00 00 00 
+     14bf 00 00 00 00 
+   6                   
+   7                   ; send buffer size
+   8                   
+   9                   d_snd_buff_sz
+  10                   
+  11 14c3 00 00 00 00      .repeat 16,0
+     14c7 00 00 00 00 
+     14cb 00 00 00 00 
+     14cf 00 00 00 00 
+  12                   
+  13                   ; send buffer -> data to send using wic64 to host
+  14                   ;
+  15                   ; todo: replace with 1 page of allocated memory 
+  16                   
+  17                   d_snd_buff
+  18                   
+  19 14d3 00 00 00 00      .repeat 64,0
+     14d7 00 00 00 00 
+     14db 00 00 00 00 
+     14df 00 00 00 00 
+     14e3 00 00 00 00 
+     14e7 00 00 00 00 
+     14eb 00 00 00 00 
+     14ef 00 00 00 00 
+     14f3 00 00 00 00 
+     14f7 00 00 00 00 
+     14fb 00 00 00 00 
+     14ff 00 00 00 00 
+     1503 00 00 00 00 
+     1507 00 00 00 00 
+     150b 00 00 00 00 
+     150f 00 00 00 00 
+  20                   
+  21                   ; recv buffer position
+  22                   
+  23                   d_rcv_buff_pos
+  24                   
+  25 1513 00 00 00 00      .repeat 16,0
+     1517 00 00 00 00 
+     151b 00 00 00 00 
+     151f 00 00 00 00 
+  26                   
+  27                   ; recv buffer size
+  28                   
+  29                   d_rcv_buff_sz
+  30                   
+  31 1523 00 00 00 00      .repeat 16,0
+     1527 00 00 00 00 
+     152b 00 00 00 00 
+     152f 00 00 00 00 
+  32                   
+  33                   ; recv buffer -> data from the wic64
+  34                   ;
+  35                   ; todo: replace with 1 page of allocated memory 
+  36                   
+  37                   d_rcv_buff
+  38                   
+  39 1533 00 00 00 00      .repeat 64,0
+     1537 00 00 00 00 
+     153b 00 00 00 00 
+     153f 00 00 00 00 
+     1543 00 00 00 00 
+     1547 00 00 00 00 
+     154b 00 00 00 00 
+     154f 00 00 00 00 
+     1553 00 00 00 00 
+     1557 00 00 00 00 
+     155b 00 00 00 00 
+     155f 00 00 00 00 
+     1563 00 00 00 00 
+     1567 00 00 00 00 
+     156b 00 00 00 00 
+     156f 00 00 00 00 
+  40                   
+  41                   ; cmd buffer position
+  42                   
+  43                   d_cmd_buff_pos
+  44                   
+  45 1573 00 00 00 00      .repeat 16,0
+     1577 00 00 00 00 
+     157b 00 00 00 00 
+     157f 00 00 00 00 
+  46                   
+  47                   ; cmd buffer size
+  48                   
+  49                   d_cmd_buff_sz
+  50                   
+  51 1583 00 00 00 00      .repeat 16,0
+     1587 00 00 00 00 
+     158b 00 00 00 00 
+     158f 00 00 00 00 
+  52                   
+  53                   ; cmd buffer -> command data for network/cnp
+  54                   
+  55                   
+  56                   d_cmd_buff
+  57                   
+  58 1593 00 00 00 00      .repeat 16,0
+     1597 00 00 00 00 
+     159b 00 00 00 00 
+     159f 00 00 00 00 
+  59                   
+  60                   
+  61                   d_payload_sts
+  62                   
+  63 15a3 00 00 00 00      .repeat 16,0
+     15a7 00 00 00 00 
+     15ab 00 00 00 00 
+     15af 00 00 00 00 
+  64                   
+  65                   d_payload_sz
+  66                   
+  67 15b3 00 00 00 00      .repeat 16,0
+     15b7 00 00 00 00 
+     15bb 00 00 00 00 
+     15bf 00 00 00 00 
+  68                   
+  69                   w_payload
+  70                   
+  71 15c3 00 00 00 00      .repeat 64,0
+     15c7 00 00 00 00 
+     15cb 00 00 00 00 
+     15cf 00 00 00 00 
+     15d3 00 00 00 00 
+     15d7 00 00 00 00 
+     15db 00 00 00 00 
+     15df 00 00 00 00 
+     15e3 00 00 00 00 
+     15e7 00 00 00 00 
+     15eb 00 00 00 00 
+     15ef 00 00 00 00 
+     15f3 00 00 00 00 
+     15f7 00 00 00 00 
+     15fb 00 00 00 00 
+     15ff 00 00 00 00 
+  72                   
+  29                   
+  30                   .include "sys.asm"
+   1                   
+   2                   extern
+   3                            #inc_h "memory"
+   1                   lmem            = $00fe
+   2                   memcpy_         = $0000
+   3                   memset_         = $0003
+   4                   memfree_        = $0006
+   5                   free_           = $0009
+   6                   malloc_         = $000c
+   7                   pgfree_         = $000f
+   8                   pgmark_         = $0012
+   9                   pgalloc_        = $0015
+  10                   reuconf_        = $0018
+  11                   pgfetch_        = $001b
+  12                   pgstash_        = $001e
+  13                   realloc_        = $0003
+  14                   bkfree_         = $0006
+  15                   bkalloc_        = $0009
+  16                   
+   4                   pgfree   #syscall lmem,pgfree_
+  20 1603 fe                    .byte \1
+  21 1604 0f 00                 .word \2
+   5                   pgalloc  #syscall lmem,pgalloc_
+  20 1606 fe                    .byte \1
+  21 1607 15 00                 .word \2
+   6                   
+   7                            #inc_h "service"
+   1                   lser            = $00f2
+   2                   alert_          = $0000
+   3                   confirq_        = $0003
+   4                   getargs_        = $0006
+   5                   updstat_        = $0009
+   6                   setflags_       = $000c
+   7                   redrwtod_       = $000f
+   8                   setgfx_         = $0012
+   9                   getsfref_       = $0015
+  10                   syskcmd_        = $0018
+  11                   initextern_     = $001b
+  12                   loadutil_       = $001e
+  13                   quitapp_        = $0021
+  14                   loadapp_        = $0024
+  15                   loadreloc_      = $0027
+  16                   loadlib_        = $002a
+  17                   unldlib_        = $002d
+  18                   
+   8                   quitapp  #syscall lser,quitapp_
+  20 1609 f2                    .byte \1
+  21 160a 21 00                 .word \2
+   9                   
+  10                            #inc_h "string"
+   1                   lstr            = $00fa
+   2                   strlen_         = $0000
+   3                   memncpy_        = $0003
+   4                   asc2pet_        = $0006
+   5                   pet2asc_        = $0009
+   6                   pet2scr_        = $000c
+   7                   tolower_        = $000f
+   8                   toupper_        = $0012
+   9                   isdigit_        = $0015
+  10                   strdel_         = $0018
+  11                   strins_         = $001b
+  12                   
+  11                   pet2asc  #syscall lstr,pet2asc_  ;If needed for strings
+  20 160c fa                    .byte \1
+  21 160d 09 00                 .word \2
+  12                   
+  13                   
+  31                   
+  32 160f ff           .byte $ff
+  33                   
+  34                   

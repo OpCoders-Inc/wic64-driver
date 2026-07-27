@@ -1,0 +1,99 @@
+
+when ssid is called
+
+    send command to join wifi 
+    wait for return from wic64 
+
+    connected ok?
+
+        add "00", "0d" to cmd buffer
+
+    error?
+
+        return error (set carry?)
+
+
+
+when poll is called 
+
+    does cmd buffer have data 
+
+        yes?
+
+            return true
+
+    does snd buffer have data
+
+        yes?
+
+            return true
+
+    does wic payload have data
+
+        yes?
+
+            return true
+
+
+    does wic have data available
+
+        yes?
+
+            get payload size 
+            return true
+
+
+    return false
+
+
+when dataget is called
+
+    does cmd buffer have data
+
+        yes?
+
+            get next byte from cmd buffer 
+            send next byte
+
+    does wic buffer have data
+
+        yes?
+
+            read next byte from wic            
+            send next rcv byte 
+
+
+
+when dataput is called
+
+    add byte to snd buffer 
+
+    is send buffer full
+
+        yes?
+
+            send buffer to host
+            flush buffer 
+
+        no?
+
+            return 
+
+when opensock is called 
+
+    carry clear
+
+        yes?
+
+            get host info
+            open tcp socket
+            add "01", "0d" to cmd buffer
+
+        no?
+
+            close tcp socket
+            add "03", "0d" to cmd buffer
+
+
+
+

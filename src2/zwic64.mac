@@ -1,0 +1,82 @@
+; ---------------------------------------------------------
+; send command
+;
+; use this macro when you need to send a command with
+; no payload, for example the GET_VERSION_STRING
+; command requires no additional parameters
+;
+; paramaters:
+;
+;   1   wic64 command 
+
+    wic64_send_command .macro
+
+        lda #\1
+        jsr wic64_do_send_command
+
+    .endm
+
+; ---------------------------------------------------------
+; send command with payload 
+;
+; use this macro when you do need to send a command with
+; no payload, for example the ECHO command 
+; requires a string, in addition the macro 
+; will determine the size of the payload before
+; sending and add that to the command
+;
+; parameters:
+;
+;   1   wic64 command
+;   2   pointer to payload 
+; 
+
+    wic64_send_command_with_payload .macro
+
+        lda #\1
+        ldx #<\2
+        ldy #>\2
+        jsr wic64_do_send_command_with_payload
+
+    .endm
+
+
+; ---------------------------------------------------------
+; recv data from wic64
+;
+; use this macro to read data coming back from the
+; wic64 and store it in payload
+;
+; paramaters:
+;
+;   1   pointer to data  
+
+    wic64_recv_data .macro
+
+        ldx #<wic64_payload
+        ldy #>wic64_payload
+        
+        jsr wic64_do_recv_data
+
+    .endm
+
+
+; ---------------------------------------------------------
+; recv data from wic64 to memory
+;
+; use this macro to read data coming back from the
+; wic64 and store it in memory
+;
+; paramaters:
+;
+;   1   pointer to data  
+
+    wic64_recv_data_to_mem .macro
+
+        ldx #<\1
+        ldy #>\1
+        
+        jsr wic64_do_recv_data
+
+    .endm
+
