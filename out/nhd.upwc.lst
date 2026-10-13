@@ -169,8 +169,8 @@
   46                            .endm
   47                   
    6                   
-   7                   ;*= $b300
-   8                   *= $1000
+   7                   *= $d500
+   8                   ;*= $1000
    9                   
   10                   .include "inc.asm"
    1                           #inc_s "app"
@@ -593,25 +593,25 @@
    5                   
    6                   .block 
    7                   
-   8 1000 4c c1 10         jmp jlink       ; +$00 link             -> load driver
-   9 1003 4c d1 10         jmp junlink     ; +$03 unlink           -> unload driver 
-  10 1006 4c d2 10         jmp jsethand    ; +$06 sethand          -> config data handlers
-  11 1009 4c e9 10         jmp jpollget    ; +$09 pollget          -> check for data
-  12 100c 4c 87 11         jmp jdataget    ; +$0c dataget          -> get byte rcv/cmd buff
-  13 100f 4c b3 11         jmp jdataput    ; +$0f dataput          -> put byte snd buff 
-  14 1012 4c c7 11         jmp jsetrate    ; +$12 setrate          -> set baud rate
-  15 1015 4c 65 11         jmp jssidstat   ; +$15 ssidstat         -> join ssid (wifi)
-  16 1018 4c c9 11         jmp jopensock   ; +$18 opensock         -> open tcp socket
-  17 101b 4c 29 10         jmp jnone       ; +$1b nhdpause         -> pause nmi 
-  18 101e 4c 29 10         jmp jnone       ; +$1e hndresume        -> resume mni 
+   8 d500 4c c1 d5         jmp jlink       ; +$00 link             -> load driver
+   9 d503 4c d1 d5         jmp junlink     ; +$03 unlink           -> unload driver 
+  10 d506 4c d2 d5         jmp jsethand    ; +$06 sethand          -> config data handlers
+  11 d509 4c e9 d5         jmp jpollget    ; +$09 pollget          -> check for data
+  12 d50c 4c b2 d6         jmp jdataget    ; +$0c dataget          -> get byte rcv/cmd buff
+  13 d50f 4c d8 d6         jmp jdataput    ; +$0f dataput          -> put byte snd buff 
+  14 d512 4c ec d6         jmp jsetrate    ; +$12 setrate          -> set baud rate
+  15 d515 4c 90 d6         jmp jssidstat   ; +$15 ssidstat         -> join ssid (wifi)
+  16 d518 4c ee d6         jmp jopensock   ; +$18 opensock         -> open tcp socket
+  17 d51b 4c 29 d5         jmp jnone       ; +$1b nhdpause         -> pause nmi 
+  18 d51e 4c 29 d5         jmp jnone       ; +$1e hndresume        -> resume mni 
   19                   
   20                   .bend
   21                   
   22                   
   23                   jsig
   24                   ;---------------------------------------
-  25 1021 57 49 43 36  .text "wic64drv"
-     1025 34 44 52 56 
+  25 d521 57 49 43 36  .text "wic64drv"
+     d525 34 44 52 56 
   26                   
   27                   
   28                   jnone
@@ -620,12 +620,12 @@
   31                   .block
   32                   
   33                   .ifdef debug
-  34 1029 a9 0b        lda #11
-  35 102b 8d 20 d0     sta $d020
-  36 102e 20 ab 10     jsr delay
+  34 d529 a9 0b        lda #11
+  35 d52b 8d 20 d0     sta $d020
+  36 d52e 20 ab d5     jsr delay
   37                   .endif
   38                   
-  39 1031 60               rts
+  39 d531 60               rts
   40                   
   41                   .bend 
   42                   
@@ -638,11 +638,11 @@
   49                   
   50                   .block 
   51                   
-  52 1032 ee 83 15         inc d_cmd_buff_sz
-  53 1035 ae 83 15         ldx d_cmd_buff_sz
-  54 1038 9d 93 15         sta d_cmd_buff, x
+  52 d532 ee 7e db         inc d_cmd_buff_sz
+  53 d535 ae 7e db         ldx d_cmd_buff_sz
+  54 d538 9d 8e db         sta d_cmd_buff, x
   55                   
-  56 103b 60               rts 
+  56 d53b 60               rts 
   57                   
   58                   .bend 
   59                   
@@ -654,34 +654,34 @@
   65                   
   66                   .block 
   67                   
-  68 103c 18               clc
-  69 103d ee 73 15         inc d_cmd_buff_pos
-  70 1040 ae 73 15         ldx d_cmd_buff_pos
-  71 1043 bd 93 15         lda d_cmd_buff, x
+  68 d53c 18               clc
+  69 d53d ee 6e db         inc d_cmd_buff_pos
+  70 d540 ae 6e db         ldx d_cmd_buff_pos
+  71 d543 bd 8e db         lda d_cmd_buff, x
   72                       
   73                       ; have we reached the end?
   74                   
-  75 1046 ec 83 15         cpx d_cmd_buff_sz 
-  76 1049 d0 0f            bne return 
+  75 d546 ec 7e db         cpx d_cmd_buff_sz 
+  76 d549 d0 0f            bne return 
   77                   
   78                       ; reset buffer counters
   79                   
-  80 104b 8d 5b 10         sta tempa
+  80 d54b 8d 5b d5         sta tempa
   81                   
-  82 104e a9 00            lda #0
-  83 1050 8d 73 15         sta d_cmd_buff_pos
-  84 1053 8d 83 15         sta d_cmd_buff_sz
-  85 1056 38               sec
+  82 d54e a9 00            lda #0
+  83 d550 8d 6e db         sta d_cmd_buff_pos
+  84 d553 8d 7e db         sta d_cmd_buff_sz
+  85 d556 38               sec
   86                   
-  87 1057 ad 5b 10         lda tempa
+  87 d557 ad 5b d5         lda tempa
   88                   
   89                   return
   90                   
-  91 105a 60               rts 
+  91 d55a 60               rts 
   92                   
   93                   tempa 
   94                   
-  95 105b 00               .byte 0
+  95 d55b 00               .byte 0
   96                   
   97                   .bend 
   98                   
@@ -693,11 +693,11 @@
  104                   
  105                   .block 
  106                   
- 107 105c ee 23 15         inc d_rcv_buff_sz
- 108 105f ae 23 15         ldx d_rcv_buff_sz
- 109 1062 9d 33 15         sta d_rcv_buff, x
+ 107 d55c ee 5e da         inc d_rcv_buff_sz
+ 108 d55f ae 5e da         ldx d_rcv_buff_sz
+ 109 d562 9d 6e da         sta d_rcv_buff, x
  110                   
- 111 1065 60               rts 
+ 111 d565 60               rts 
  112                   
  113                   .bend 
  114                   
@@ -710,34 +710,34 @@
  121                   
  122                   .block 
  123                   
- 124 1066 18               clc
- 125 1067 ee 13 15         inc d_rcv_buff_pos
- 126 106a ae 13 15         ldx d_rcv_buff_pos
- 127 106d bd 33 15         lda d_rcv_buff, x
+ 124 d566 18               clc
+ 125 d567 ee 4e da         inc d_rcv_buff_pos
+ 126 d56a ae 4e da         ldx d_rcv_buff_pos
+ 127 d56d bd 6e da         lda d_rcv_buff, x
  128                       
  129                       ; have we reached the end?
  130                   
- 131 1070 ec 23 15         cpx d_rcv_buff_sz 
- 132 1073 d0 0f            bne return 
+ 131 d570 ec 5e da         cpx d_rcv_buff_sz 
+ 132 d573 d0 0f            bne return 
  133                   
  134                       ; reset buffer counters
  135                   
- 136 1075 8d 85 10         sta tempa
+ 136 d575 8d 85 d5         sta tempa
  137                   
- 138 1078 a9 00            lda #0
- 139 107a 8d 13 15         sta d_rcv_buff_pos
- 140 107d 8d 23 15         sta d_rcv_buff_sz
- 141 1080 38               sec
+ 138 d578 a9 00            lda #0
+ 139 d57a 8d 4e da         sta d_rcv_buff_pos
+ 140 d57d 8d 5e da         sta d_rcv_buff_sz
+ 141 d580 38               sec
  142                   
- 143 1081 ad 85 10         lda tempa
+ 143 d581 ad 85 d5         lda tempa
  144                   
  145                   return
  146                   
- 147 1084 60               rts 
+ 147 d584 60               rts 
  148                   
  149                   tempa 
  150                   
- 151 1085 00               .byte 0
+ 151 d585 00               .byte 0
  152                   
  153                   .bend 
  154                   
@@ -748,11 +748,11 @@
  159                   
  160                   .block 
  161                   
- 162 1086 ee c3 14         inc d_snd_buff_sz
- 163 1089 ae c3 14         ldx d_snd_buff_sz
- 164 108c 9d d3 14         sta d_snd_buff, x
+ 162 d586 ee fe d9         inc d_snd_buff_sz
+ 163 d589 ae fe d9         ldx d_snd_buff_sz
+ 164 d58c 9d 0e da         sta d_snd_buff, x
  165                   
- 166 108f 60               rts 
+ 166 d58f 60               rts 
  167                   
  168                   .bend 
  169                   
@@ -766,29 +766,29 @@
  177                   
  178                       ; add zero byte to end 
  179                   
- 180 1090 a9 00            lda #0
- 181 1092 20 86 10         jsr push_snd_buff 
+ 180 d590 a9 00            lda #0
+ 181 d592 20 86 d5         jsr push_snd_buff 
  182                   
  183                       ; reset buffer pointers
  184                   
- 185 1095 8d b3 14         sta d_snd_buff_pos
- 186 1098 8d c3 14         sta d_snd_buff_sz
+ 185 d595 8d ee d9         sta d_snd_buff_pos
+ 186 d598 8d fe d9         sta d_snd_buff_sz
  187                   
  188                       ; call wic64 send 
  189                   
- 190 109b a9 23            lda #WC_TCP_WRITE
- 191 109d a2 d4            ldx #<d_snd_buff + 1
- 192 109f a0 14            ldy #>d_snd_buff + 1
- 193 10a1 20 87 12         jsr wic64_do_send_command_with_payload
+ 190 d59b a9 23            lda #WC_TCP_WRITE
+ 191 d59d a2 0f            ldx #<d_snd_buff + 1
+ 192 d59f a0 da            ldy #>d_snd_buff + 1
+ 193 d5a1 20 c2 d7         jsr wic64_do_send_command_with_payload
  194                   
  195                       ; wait for response
  196                   
  197                       #w_rcv_dat
   88                   
-  89 10a4 a2 13            ldx #<wic64_payload
-  90 10a6 a0 14            ldy #>wic64_payload
+  89 d5a4 a2 4e            ldx #<wic64_payload
+  90 d5a6 a0 d9            ldy #>wic64_payload
   91                       
-  92 10a8 20 19 13         jsr wic64_do_recv_data
+  92 d5a8 20 54 d8         jsr wic64_do_recv_data
   93                   
  198                   
  199                   
@@ -800,22 +800,22 @@
  205                   
  206                   .block 
  207                   
- 208 10ab a9 02                lda #$02
- 209 10ad 8d b7 10             sta period+1
+ 208 d5ab a9 02                lda #$02
+ 209 d5ad 8d b7 d5             sta period+1
  210                   
- 211 10b0 a9 00                lda #0
- 212 10b2 85 a2                sta jiffylo
+ 211 d5b0 a9 00                lda #0
+ 212 d5b2 85 a2                sta jiffylo
  213                   
  214                           next     
  215                           
- 216 10b4 a5 a2                lda jiffylo
+ 216 d5b4 a5 a2                lda jiffylo
  217                           period   
  218                           
- 219 10b6 c9 01                cmp #1  
+ 219 d5b6 c9 01                cmp #1  
  220                           
- 221 10b8 90 fa                bcc next
+ 221 d5b8 90 fa                bcc next
  222                   
- 223 10ba 60                   rts 
+ 223 d5ba 60                   rts 
  224                   
  225                   .bend 
  226                   
@@ -823,12 +823,12 @@
  228                   mode_carrier
  229                   ;---------------------------------------
  230                   
- 231 10bb 4c b2 02         jmp raw_rts 
+ 231 d5bb 4c b2 02         jmp raw_rts 
  232                   
  233                   mode_command 
  234                   ;---------------------------------------
  235                   
- 236 10be 4c b2 02         jmp raw_rts 
+ 236 d5be 4c b2 02         jmp raw_rts 
  237                   
   13                   
   14                   .include "vars.asm"
@@ -847,21 +847,21 @@
    5                   .block 
    6                   
    7                   .ifdef debug
-   8 10c1 a9 00        lda #0
-   9 10c3 8d 20 d0     sta $d020
-  10 10c6 20 ab 10     jsr delay
+   8 d5c1 a9 00        lda #0
+   9 d5c3 8d 20 d0     sta $d020
+  10 d5c6 20 ab d5     jsr delay
   11                   .endif
   12                   
   13                   ; init external calls like pet2asc 
   14                   
   15                       #ldxy extern
-   9 10c9 a2 03                 ldx #<\1
-  10 10cb a0 16                 ldy #>\1
-  16 10cd 20 fc 02         jsr initextern
+   9 d5c9 a2 fe                 ldx #<\1
+  10 d5cb a0 db                 ldy #>\1
+  16 d5cd 20 fc 02         jsr initextern
   17                   
   18                   end 
   19                   
-  20 10d0 60               rts
+  20 d5d0 60               rts
   21                   
   22                   .bend
   23                   
@@ -872,7 +872,7 @@
    4                   ;
    5                   .block
    6                   
-   7 10d1 60               rts 
+   7 d5d1 60               rts 
    8                   
    9                   .bend
   10                   
@@ -885,26 +885,26 @@
    6                   
    7                   .block 
    8                   
-   9 10d2 a9 01            lda #1
-  10 10d4 8d 20 d0         sta $d020
+   9 d5d2 a9 01            lda #1
+  10 d5d4 8d 20 d0         sta $d020
   11                   
-  12 10d7 90 08            bcc set_command 
+  12 d5d7 90 08            bcc set_command 
   13                   
   14                   set_carrier
   15                   
   16                       #stxy mode_carrier+1
-  14 10d9 8e bc 10              stx \1
-  15 10dc 8c bd 10              sty \1+1
-  17 10df 38               sec
-  18 10e0 60               rts 
+  14 d5d9 8e bc d5              stx \1
+  15 d5dc 8c bd d5              sty \1+1
+  17 d5df 38               sec
+  18 d5e0 60               rts 
   19                   
   20                   set_command
   21                   
   22                       #stxy mode_command+1
-  14 10e1 8e bf 10              stx \1
-  15 10e4 8c c0 10              sty \1+1
-  23 10e7 38               sec
-  24 10e8 60               rts 
+  14 d5e1 8e bf d5              stx \1
+  15 d5e4 8c c0 d5              sty \1+1
+  23 d5e7 38               sec
+  24 d5e8 60               rts 
   25                   
   26                   .bend
   27                   
@@ -918,117 +918,145 @@
    5                   .block 
    6                   
    7                   .ifdef debug
-   8 10e9 a9 04        lda #4
-   9 10eb 8d 20 d0     sta $d020
-  10 10ee 20 ab 10     jsr delay
+   8 d5e9 a9 04        lda #4
+   9 d5eb 8d 20 d0     sta $d020
+  10 d5ee 20 ab d5     jsr delay
   11                   .endif
   12                   
-  13                   chk_cmd_buff
+  13                   chk_snd_buff
   14                   
-  15 10f1 ad 83 15         lda d_cmd_buff_sz
-  16 10f4 f0 0b            beq chk_snd_buff
-  17 10f6 4c 51 11         jmp do_cmd_buff
+  15 d5f1 ad fe d9         lda d_snd_buff_sz
+  16 d5f4 f0 03            beq chk_rcv_buff
+  17 d5f6 4c 7c d6         jmp do_snd_buff
   18                   
-  19                   chk_wic_buff
+  19                   chk_rcv_buff
   20                   
-  21 10f9 ad b3 15         lda d_payload_sz 
-  22 10fc f0 03            beq chk_snd_buff
-  23 10fe 4c 55 11         jmp do_wic_buff
+  21 d5f9 ad 5e da         lda d_rcv_buff_sz
+  22 d5fc f0 03            beq chk_cmd_buff
+  23 d5fe 4c 87 d6         jmp do_rcv_buff
   24                   
-  25                   chk_snd_buff
+  25                   chk_cmd_buff
   26                   
-  27 1101 ad c3 14         lda d_snd_buff_sz
-  28 1104 f0 03            beq chk_wic_pay
-  29 1106 4c 59 11         jmp do_snd_buff
+  27 d601 ad 7e db         lda d_cmd_buff_sz
+  28 d604 f0 03            beq chk_wic_pay
+  29 d606 4c 8b d6         jmp do_cmd_buff
   30                   
   31                   chk_wic_pay
   32                   
   33                       ; check network status
-  34                       ; 
-  35                       ; todo: i think this is a hack
-  36                   
-  37 1109 ad 45 02         lda $0245
-  38 110c c9 3f            cmp #$3f 
-  39 110e d0 40            bne end 
-  40                   
-  41                   .ifdef debug
-  42 1110 a9 0a        lda #10
-  43 1112 8d 20 d0     sta $d020
-  44 1115 20 ab 10     jsr delay
-  45                   .endif
+  34                   
+  35 d609 ad 45 02         lda $0245
+  36 d60c c9 3f            cmp #$3f 
+  37 d60e d0 6b            bne end 
+  38                   
+  39                   .ifdef debug
+  40 d610 a9 0a        lda #10
+  41 d612 8d 20 d0     sta $d020
+  42 d615 20 ab d5     jsr delay
+  43                   .endif
+  44                   
+  45                       ; query available data count
   46                   
-  47 1118 a9 00            lda #0
-  48 111a 8d c3 15         sta w_payload 
-  49 111d 8d c4 15         sta w_payload + 1
-  50                   
-  51                       ; payload available?
-  52                   
-  53 1120 a9 30            lda #WC_TCP_AVAIL
-  54 1122 20 6f 12         jsr wic64_do_send_command
-  55                   
-  56 1125 a2 c3            ldx #<w_payload
-  57 1127 a0 15            ldy #>w_payload
-  58 1129 20 ab 10         jsr delay
-  59 112c 20 19 13         jsr wic64_do_recv_data
-  60                   
-  61                       ; any data?
+  47 d618 a9 30            lda #WC_TCP_AVAIL
+  48 d61a 20 94 d7         jsr wic64_do_send_command
+  49                   
+  50 d61d a2 be            ldx #<w_payload
+  51 d61f a0 db            ldy #>w_payload
+  52 d621 20 ab d5         jsr delay
+  53 d624 20 54 d8         jsr wic64_do_recv_data
+  54                   
+  55                       ; any data available?
+  56                   
+  57 d627 ad be db         lda w_payload
+  58 d62a d0 08            bne wic_read
+  59 d62c ad bf db         lda w_payload + 1
+  60 d62f d0 03            bne wic_read
+  61 d631 4c 7b d6         jmp end
   62                   
-  63 112f ad c3 15         lda w_payload
-  64 1132 d0 08            bne wic_read
-  65 1134 ad c4 15         lda w_payload + 1
-  66 1137 d0 03            bne wic_read
-  67 1139 4c 50 11         jmp end
-  68                   
-  69                       ; get payload size 
+  63                   wic_read
+  64                   
+  65                       ; read available bytes from wic64
+  66                   
+  67 d634 ae be db         ldx w_payload
+  68 d637 ac bf db         ldy w_payload + 1
+  69 d63a 20 ac d7         jsr wic64_do_tcp_read
   70                   
-  71                   wic_read
+  71                       ; get header
   72                   
-  73                       ; store payload in rcv buffer 
-  74                   
-  75 113c a9 22            lda #WC_TCP_READ
-  76 113e 20 6f 12         jsr wic64_do_send_command
-  77                   
-  78                       ; get header 
-  79                   
-  80 1141 20 ab 10         jsr delay
-  81 1144 20 ef 12         jsr wic64_do_recv_header
-  82 1147 8d a3 15         sta d_payload_sts
-  83 114a 8e b3 15         stx d_payload_sz
-  84 114d 8c b4 15         sty d_payload_sz + 1
-  85                   
-  86                   end
-  87                   
-  88 1150 60               rts 
+  73 d63d 20 ab d5         jsr delay
+  74 d640 20 2a d8         jsr wic64_do_recv_header
+  75 d643 8d 9e db         sta d_payload_sts
+  76                   
+  77                       ; store payload size in count
+  78                   
+  79 d646 8e ae db         stx d_payload_sz
+  80 d649 8c af db         sty d_payload_sz + 1
+  81                   
+  82                       ; make sure there is data
+  83                   
+  84 d64c ad ae db         lda d_payload_sz
+  85 d64f d0 08            bne wic_rcv_data
+  86 d651 ad af db         lda d_payload_sz + 1
+  87 d654 d0 03            bne wic_rcv_data
+  88 d656 4c 7b d6         jmp end
   89                   
-  90                   do_cmd_buff
+  90                       ; read all payload bytes into rcv buffer
   91                   
-  92 1151 18               clc 
-  93 1152 4c bb 10         jmp mode_carrier
-  94                   
-  95                   do_wic_buff
+  92                   wic_rcv_data
+  93                   
+  94 d659 a9 00            lda #0
+  95 d65b 8d 4e da         sta d_rcv_buff_pos
   96                   
-  97 1155 38               sec 
-  98 1156 4c bb 10         jmp mode_carrier
+  97 d65e 20 7e d7         jsr wic64_read_byte
+  98 d661 20 5c d5         jsr push_rcv_buff
   99                   
- 100                   do_snd_buff
- 101                   
- 102 1159 8d 64 11         sta tempa
- 103 115c 20 90 10         jsr flush_snd_buff
- 104 115f ad 64 11         lda tempa
+ 100 d664 ad ae db         lda d_payload_sz
+ 101 d667 d0 03            bne dec_lo
+ 102 d669 ce af db         dec d_payload_sz + 1
+ 103                   
+ 104                   dec_lo
  105                   
- 106 1162 18               clc
- 107 1163 60               rts 
- 108                   
- 109                   tempa 
- 110                   tempx
- 111                   
- 112 1164 00               .byte 0
- 113                   
- 114                   
- 115                   .bend
- 116                   
+ 106 d66c ce ae db         dec d_payload_sz
+ 107 d66f ad ae db         lda d_payload_sz
+ 108 d672 0d af db         ora d_payload_sz + 1
+ 109 d675 d0 e2            bne wic_rcv_data
+ 110                   
+ 111                       ; signal data ready to cnp
+ 112                   
+ 113 d677 38               sec
+ 114 d678 4c bb d5         jmp mode_carrier
+ 115                   
+ 116                   end
  117                   
- 118                   
+ 118 d67b 60               rts 
+ 119                   
+ 120                   do_snd_buff
+ 121                   
+ 122 d67c 8d 8f d6         sta tempa
+ 123 d67f 20 90 d5         jsr flush_snd_buff
+ 124 d682 ad 8f d6         lda tempa
+ 125                   
+ 126 d685 18               clc
+ 127 d686 60               rts 
+ 128                   
+ 129                   do_rcv_buff
+ 130                   
+ 131 d687 38               sec 
+ 132 d688 4c bb d5         jmp mode_carrier
+ 133                   
+ 134                   do_cmd_buff
+ 135                   
+ 136 d68b 18               clc 
+ 137 d68c 4c bb d5         jmp mode_carrier
+ 138                   
+ 139                   tempa 
+ 140                   tempx
+ 141                   
+ 142 d68f 00               .byte 0
+ 143                   
+ 144                   
+ 145                   .bend
+ 146                   
   20                   .include "jssidstat.asm"
    1                   jssidstat
    2                   ;---------------------------------------
@@ -1038,7 +1066,7 @@
    6                   
    7                   .block 
    8                   
-   9 1165 90 14            bcc read_ssid
+   9 d690 90 14            bcc read_ssid
   10                   
   11                   join_ssid 
   12                   
@@ -1049,30 +1077,30 @@
   17                   ; set ack command to network
   18                   
   19                   .ifdef debug
-  20 1167 a9 02        lda #2
-  21 1169 8d 20 d0     sta $d020
-  22 116c 20 ab 10     jsr delay
+  20 d692 a9 02        lda #2
+  21 d694 8d 20 d0     sta $d020
+  22 d697 20 ab d5     jsr delay
   23                   .endif
   24                   
-  25 116f a9 30            lda #"0"
-  26 1171 20 32 10         jsr push_cmd_buff
-  27 1174 a9 0d            lda #$0d
-  28 1176 20 32 10         jsr push_cmd_buff
+  25 d69a a9 30            lda #"0"
+  26 d69c 20 32 d5         jsr push_cmd_buff
+  27 d69f a9 0d            lda #$0d
+  28 d6a1 20 32 d5         jsr push_cmd_buff
   29                   
-  30 1179 18               clc 
-  31 117a 60               rts
+  30 d6a4 18               clc 
+  31 d6a5 60               rts
   32                   
   33                   read_ssid 
   34                   
   35                   .ifdef debug
-  36 117b a9 02        lda #2
-  37 117d 8d 20 d0     sta $d020
-  38 1180 20 ab 10     jsr delay
+  36 d6a6 a9 02        lda #2
+  37 d6a8 8d 20 d0     sta $d020
+  38 d6ab 20 ab d5     jsr delay
   39                   .endif
   40                   
-  41 1183 a9 00            lda #0
-  42 1185 38               sec 
-  43 1186 60               rts 
+  41 d6ae a9 00            lda #0
+  42 d6b0 38               sec 
+  43 d6b1 60               rts 
   44                   
   45                   .bend
   46                   
@@ -1086,48 +1114,46 @@
    7                   
    8                   .block
    9                   
-  10 1187 8e b2 11         stx tempx
+  10 d6b2 8e d7 d6         stx tempx
   11                   
-  12                   chk_cmd_buff
+  12                   chk_rcv_buff
   13                   
-  14 118a ad 83 15         lda d_cmd_buff_sz
-  15 118d f0 03            beq chk_wic_buff 
-  16 118f 4c 9c 11         jmp do_cmd_buff 
+  14 d6b5 ad 5e da         lda d_rcv_buff_sz
+  15 d6b8 f0 03            beq chk_cmd_buff 
+  16 d6ba 4c c7 d6         jmp do_rcv_buff 
   17                   
-  18                   chk_wic_buff
+  18                   chk_cmd_buff
   19                   
-  20 1192 ad b3 15         lda d_payload_sz
-  21 1195 f0 03            beq return 
-  22 1197 4c a4 11         jmp do_wic_buff
+  20 d6bd ad 7e db         lda d_cmd_buff_sz
+  21 d6c0 f0 03            beq return 
+  22 d6c2 4c cf d6         jmp do_cmd_buff 
   23                   
   24                   return 
   25                   
-  26 119a 38               sec ; <- no data
-  27 119b 60               rts
+  26 d6c5 38               sec ; <- no data
+  27 d6c6 60               rts
   28                   
   29                   
-  30                   do_cmd_buff 
+  30                   do_rcv_buff 
   31                   
-  32 119c 20 3c 10         jsr pop_cmd_buff
-  33 119f ae b2 11         ldx tempx
-  34 11a2 18               clc 
-  35 11a3 60               rts
+  32 d6c7 20 66 d5         jsr pop_rcv_buff
+  33 d6ca ae d7 d6         ldx tempx
+  34 d6cd 18               clc 
+  35 d6ce 60               rts
   36                   
-  37                   do_wic_buff 
+  37                   do_cmd_buff 
   38                   
-  39 11a4 20 4b 12         jsr wic64_do_recv_mode
-  40 11a7 20 59 12         jsr wic64_read_byte
-  41 11aa ce b3 15         dec d_payload_sz
-  42 11ad ae b2 11         ldx tempx
-  43 11b0 18               clc 
-  44 11b1 60               rts
+  39 d6cf 20 3c d5         jsr pop_cmd_buff
+  40 d6d2 ae d7 d6         ldx tempx
+  41 d6d5 18               clc 
+  42 d6d6 60               rts
+  43                   
+  44                   tempx
   45                   
-  46                   tempx
+  46 d6d7 00               .byte 0
   47                   
-  48 11b2 00               .byte 0
+  48                   .bend
   49                   
-  50                   .bend
-  51                   
   22                   .include "jdataput.asm"
    1                   jdataput
    2                   ;---------------------------------------
@@ -1136,27 +1162,27 @@
    5                   
    6                   .block
    7                   
-   8 11b3 8e c6 11         stx tempx
+   8 d6d8 8e eb d6         stx tempx
    9                   
   10                       ; push next byte to send buffer 
   11                   
-  12 11b6 20 86 10         jsr push_snd_buff
+  12 d6db 20 86 d5         jsr push_snd_buff
   13                   
   14                   .ifdef debug
-  15 11b9 a9 06        lda #6
-  16 11bb 8d 20 d0     sta $d020
-  17 11be 20 ab 10     jsr delay
+  15 d6de a9 06        lda #6
+  16 d6e0 8d 20 d0     sta $d020
+  17 d6e3 20 ab d5     jsr delay
   18                   .endif
   19                   
   20                   
-  21 11c1 ae c6 11         ldx tempx 
+  21 d6e6 ae eb d6         ldx tempx 
   22                       
-  23 11c4 18               clc 
-  24 11c5 60               rts 
+  23 d6e9 18               clc 
+  24 d6ea 60               rts 
   25                   
   26                   tempx 
   27                   
-  28 11c6 00               .byte 0
+  28 d6eb 00               .byte 0
   29                   
   30                   .bend 
   31                   
@@ -1166,8 +1192,8 @@
    3                   
    4                   .block 
    5                   
-   6 11c7 18               clc
-   7 11c8 60               rts 
+   6 d6ec 18               clc
+   7 d6ed 60               rts 
    8                   
    9                   .bend 
   10                   
@@ -1181,90 +1207,90 @@
    7                       ; get cnp host info
    8                       
    9                       #stxy !ptr 
-  14 11c9 86 63                 stx \1
-  15 11cb 84 64                 sty \1+1
+  14 d6ee 86 63                 stx \1
+  15 d6f0 84 64                 sty \1+1
   10                   
-  11 11cd a0 00            ldy #tcp_host
-  12 11cf b1 63            lda (!ptr),y 
-  13 11d1 8d 61 00         sta !sptr+0
-  14 11d4 c8               iny 
-  15 11d5 b1 63            lda (!ptr),y 
-  16 11d7 8d 62 00         sta !sptr+1
+  11 d6f2 a0 00            ldy #tcp_host
+  12 d6f4 b1 63            lda (!ptr),y 
+  13 d6f6 8d 61 00         sta !sptr+0
+  14 d6f9 c8               iny 
+  15 d6fa b1 63            lda (!ptr),y 
+  16 d6fc 8d 62 00         sta !sptr+1
   17                   
-  18 11da a2 00            ldx #0
-  19 11dc a0 00            ldy #0
+  18 d6ff a2 00            ldx #0
+  19 d701 a0 00            ldy #0
   20                   
   21                       l1
   22                   
-  23 11de b1 61            lda (!sptr),Y
-  24 11e0 f0 0a            beq el1
-  25 11e2 20 0c 16         jsr pet2asc 
-  26 11e5 9d c3 15         sta w_payload,x
-  27 11e8 e8               inx 
-  28 11e9 c8               iny 
-  29 11ea d0 f2            bne l1
+  23 d703 b1 61            lda (!sptr),Y
+  24 d705 f0 0a            beq el1
+  25 d707 20 07 dc         jsr pet2asc 
+  26 d70a 9d be db         sta w_payload,x
+  27 d70d e8               inx 
+  28 d70e c8               iny 
+  29 d70f d0 f2            bne l1
   30                   
   31                       el1
   32                   
-  33 11ec a9 3a            lda #":"
-  34 11ee 9d c3 15         sta w_payload,x 
-  35 11f1 e8               inx
+  33 d711 a9 3a            lda #":"
+  34 d713 9d be db         sta w_payload,x 
+  35 d716 e8               inx
   36                       
-  37 11f2 a0 02            ldy #tcp_port 
-  38 11f4 b1 63            lda (!ptr),y 
-  39 11f6 8d 61 00         sta !sptr+0
-  40 11f9 c8               iny 
-  41 11fa b1 63            lda (!ptr),y 
-  42 11fc 8d 62 00         sta !sptr+1
+  37 d717 a0 02            ldy #tcp_port 
+  38 d719 b1 63            lda (!ptr),y 
+  39 d71b 8d 61 00         sta !sptr+0
+  40 d71e c8               iny 
+  41 d71f b1 63            lda (!ptr),y 
+  42 d721 8d 62 00         sta !sptr+1
   43                   
-  44 11ff a0 00            ldy #0
+  44 d724 a0 00            ldy #0
   45                   
   46                       l2 
   47                   
-  48 1201 b1 61            lda (!sptr),y
-  49 1203 f0 07            beq el2
-  50 1205 9d c3 15         sta w_payload,x
-  51 1208 e8               inx 
-  52 1209 c8               iny
-  53 120a d0 f5            bne l2
+  48 d726 b1 61            lda (!sptr),y
+  49 d728 f0 07            beq el2
+  50 d72a 9d be db         sta w_payload,x
+  51 d72d e8               inx 
+  52 d72e c8               iny
+  53 d72f d0 f5            bne l2
   54                   
   55                       el2 
   56                   
-  57 120c a9 00            lda #0
-  58 120e 9d c3 15         sta w_payload,x
+  57 d731 a9 00            lda #0
+  58 d733 9d be db         sta w_payload,x
   59                   
   60                   
   61                       ; connect to host 
   62                   
   63                       
-  64 1211 a9 21            lda #WC_TCP_OPEN
-  65 1213 a2 c3            ldx #<w_payload
-  66 1215 a0 15            ldy #>w_payload
-  67 1217 20 87 12         jsr wic64_do_send_command_with_payload
+  64 d736 a9 21            lda #WC_TCP_OPEN
+  65 d738 a2 be            ldx #<w_payload
+  66 d73a a0 db            ldy #>w_payload
+  67 d73c 20 c2 d7         jsr wic64_do_send_command_with_payload
   68                   
   69                       #w_rcv_dat
   88                   
-  89 121a a2 13            ldx #<wic64_payload
-  90 121c a0 14            ldy #>wic64_payload
+  89 d73f a2 4e            ldx #<wic64_payload
+  90 d741 a0 d9            ldy #>wic64_payload
   91                       
-  92 121e 20 19 13         jsr wic64_do_recv_data
+  92 d743 20 54 d8         jsr wic64_do_recv_data
   93                   
   70                   
   71                       ; set ack command to network
   72                   
   73                   .ifdef debug
-  74 1221 a9 05        lda #5
-  75 1223 8d 20 d0     sta $d020
-  76 1226 20 ab 10     jsr delay
+  74 d746 a9 05        lda #5
+  75 d748 8d 20 d0     sta $d020
+  76 d74b 20 ab d5     jsr delay
   77                   .endif
   78                   
-  79 1229 a9 31            lda #"1"
-  80 122b 20 32 10         jsr push_cmd_buff
-  81 122e a9 0d            lda #$0d
-  82 1230 20 32 10         jsr push_cmd_buff
+  79 d74e a9 31            lda #"1"
+  80 d750 20 32 d5         jsr push_cmd_buff
+  81 d753 a9 0d            lda #$0d
+  82 d755 20 32 d5         jsr push_cmd_buff
   83                   
-  84 1233 18               clc 
-  85 1234 60               rts
+  84 d758 18               clc 
+  85 d759 60               rts
   86                   
   87                   .bend
   88                   
@@ -1277,18 +1303,18 @@
    5                   
    6                           .block
    7                   
-   8 1235 ad 02 dd             lda ddra 
-   9 1238 09 04                ora #$04 
-  10 123a 8d 02 dd             sta ddra 
+   8 d75a ad 02 dd             lda ddra 
+   9 d75d 09 04                ora #$04 
+  10 d75f 8d 02 dd             sta ddra 
   11                   
-  12 123d ad 00 dd             lda porta 
-  13 1240 09 04                ora #$04 
-  14 1242 8d 00 dd             sta porta 
+  12 d762 ad 00 dd             lda porta 
+  13 d765 09 04                ora #$04 
+  14 d767 8d 00 dd             sta porta 
   15                   
-  16 1245 a9 ff                lda #$ff 
-  17 1247 8d 03 dd             sta ddrb 
+  16 d76a a9 ff                lda #$ff 
+  17 d76c 8d 03 dd             sta ddrb 
   18                   
-  19 124a 60                   rts
+  19 d76f 60                   rts
   20                   
   21                           .bend
   22                   
@@ -1298,13 +1324,13 @@
   26                   
   27                           .block 
   28                   
-  29 124b a9 00                lda #$00
-  30 124d 8d 03 dd             sta ddrb 
-  31 1250 ad 00 dd             lda porta 
-  32 1253 29 fb                and #251 
-  33 1255 8d 00 dd             sta porta 
+  29 d770 a9 00                lda #$00
+  30 d772 8d 03 dd             sta ddrb 
+  31 d775 ad 00 dd             lda porta 
+  32 d778 29 fb                and #251 
+  33 d77a 8d 00 dd             sta porta 
   34                   
-  35 1258 60                   rts
+  35 d77d 60                   rts
   36                   
   37                           .bend
   38                   
@@ -1315,11 +1341,11 @@
   43                   
   44                           .block
   45                   
-  46 1259 ad 0d dd             lda icr 
-  47 125c 29 10                and #$10 
-  48 125e f0 f9                beq wic64_read_byte
-  49 1260 ad 01 dd             lda portb 
-  50 1263 60                   rts
+  46 d77e ad 0d dd             lda icr 
+  47 d781 29 10                and #$10 
+  48 d783 f0 f9                beq wic64_read_byte
+  49 d785 ad 01 dd             lda portb 
+  50 d788 60                   rts
   51                   
   52                           .bend 
   53                   
@@ -1329,15 +1355,15 @@
   57                   
   58                           .block
   59                   
-  60 1264 8d 01 dd             sta portb 
+  60 d789 8d 01 dd             sta portb 
   61                   
   62                       dowrite
   63                   
-  64 1267 ad 0d dd             lda icr
-  65 126a 29 10                and #$10
-  66 126c f0 f9                beq dowrite
+  64 d78c ad 0d dd             lda icr
+  65 d78f 29 10                and #$10
+  66 d791 f0 f9                beq dowrite
   67                   
-  68 126e 60                   rts
+  68 d793 60                   rts
   69                   
   70                           .bend 
   71                   
@@ -1357,444 +1383,474 @@
   85                   
   86                           ; store the command 
   87                   
-  88 126f 48                   pha 
+  88 d794 48                   pha 
   89                   
-  90 1270 20 35 12             jsr wic64_do_send_mode
+  90 d795 20 5a d7             jsr wic64_do_send_mode
   91                   
   92                           ; send 4 byte command to get the ip address
   93                   
-  94 1273 a9 52                lda #"r"                ; protocol
-  95 1275 20 64 12             jsr wic64_write_byte
-  96 1278 68                   pla                     ; command
-  97 1279 20 64 12             jsr wic64_write_byte
-  98 127c a9 00                lda #$00                ; payload low
-  99 127e 20 64 12             jsr wic64_write_byte
- 100 1281 a9 00                lda #$00                ; payload high
- 101 1283 20 64 12             jsr wic64_write_byte
+  94 d798 a9 52                lda #"r"                ; protocol
+  95 d79a 20 89 d7             jsr wic64_write_byte
+  96 d79d 68                   pla                     ; command
+  97 d79e 20 89 d7             jsr wic64_write_byte
+  98 d7a1 a9 00                lda #$00                ; payload low
+  99 d7a3 20 89 d7             jsr wic64_write_byte
+ 100 d7a6 a9 00                lda #$00                ; payload high
+ 101 d7a8 20 89 d7             jsr wic64_write_byte
  102                   
- 103 1286 60                   rts
+ 103 d7ab 60                   rts
  104                   
  105                           .bend
  106                   
  107                   
- 108                   ; send wic64 command with payload
+ 108                   ; send wic64 tcp read command
  109                   ; ---------------------------------------------------------
  110                   ;
- 111                   ;   Sends a command with a Payload to the Wic64.
+ 111                   ;   Sends WC_TCP_READ with explicit byte count.
  112                   ;
  113                   ;   Parameters:
  114                   ;
- 115                   ;       .A  wic64 command 
- 116                   ;       .X  pointer to payload low byte 
- 117                   ;       .Y  pointer to payload high byte 
- 118                   
- 119                       wic64_do_send_command_with_payload
- 120                   
- 121                           .block 
- 122                   
- 123 1287 48                   pha
- 124                   
- 125                           ; get payload size 
- 126                   
- 127 1288 a9 00                lda #$00
- 128 128a 8d f3 13             sta wic64_payload_size
- 129 128d 8d f4 13             sta wic64_payload_size + 1
- 130                   
- 131 1290 8a                   txa
- 132 1291 85 fa                sta $fa 
- 133 1293 98                   tya
- 134 1294 85 fb                sta $fb
- 135                   
- 136 1296 a0 00                ldy #$00
+ 115                   ;       .X  count low
+ 116                   ;       .Y  count high
+ 117                   
+ 118                       wic64_do_tcp_read
+ 119                   
+ 120                           .block
+ 121                   
+ 122 d7ac 20 5a d7             jsr wic64_do_send_mode
+ 123                   
+ 124 d7af a9 52                lda #"r"                ; protocol
+ 125 d7b1 20 89 d7             jsr wic64_write_byte
+ 126 d7b4 a9 22                lda #WC_TCP_READ        ; command
+ 127 d7b6 20 89 d7             jsr wic64_write_byte
+ 128 d7b9 8a                   txa                     ; count low
+ 129 d7ba 20 89 d7             jsr wic64_write_byte
+ 130 d7bd 98                   tya                     ; count high
+ 131 d7be 20 89 d7             jsr wic64_write_byte
+ 132                   
+ 133 d7c1 60                   rts
+ 134                   
+ 135                           .bend
+ 136                   
  137                   
- 138                       loop1
- 139                   
- 140 1298 b1 fa                lda ($fa),y
- 141 129a f0 0b                beq send
- 142                   
- 143 129c ee f3 13             inc wic64_payload_size
- 144 129f d0 03                bne next
- 145 12a1 ee f4 13             inc wic64_payload_size + 1
- 146                   
- 147                       next
+ 138                   ; send wic64 command with payload
+ 139                   ; ---------------------------------------------------------
+ 140                   ;
+ 141                   ;   Sends a command with a Payload to the Wic64.
+ 142                   ;
+ 143                   ;   Parameters:
+ 144                   ;
+ 145                   ;       .A  wic64 command 
+ 146                   ;       .X  pointer to payload low byte 
+ 147                   ;       .Y  pointer to payload high byte 
  148                   
- 149 12a4 c8                   iny
+ 149                       wic64_do_send_command_with_payload
  150                   
- 151 12a5 d0 f1                bne loop1
+ 151                           .block 
  152                   
- 153                       send
- 154                           
- 155 12a7 20 35 12             jsr wic64_do_send_mode
+ 153 d7c2 48                   pha
+ 154                   
+ 155                           ; get payload size 
  156                   
- 157                           ; send command to wic64 with payload 
- 158                   
- 159 12aa a9 52                lda #"r"                        ; protocol
- 160 12ac 20 64 12             jsr wic64_write_byte
- 161 12af 68                   pla                             ; command
- 162 12b0 20 64 12             jsr wic64_write_byte
- 163 12b3 ad f3 13             lda wic64_payload_size          ; payload low
- 164 12b6 20 64 12             jsr wic64_write_byte
- 165 12b9 ad f4 13             lda wic64_payload_size + 1      ; payload high
- 166 12bc 20 64 12             jsr wic64_write_byte
+ 157 d7c3 a9 00                lda #$00
+ 158 d7c5 8d 2e d9             sta wic64_payload_size
+ 159 d7c8 8d 2f d9             sta wic64_payload_size + 1
+ 160                   
+ 161 d7cb 8a                   txa
+ 162 d7cc 85 fa                sta $fa 
+ 163 d7ce 98                   tya
+ 164 d7cf 85 fb                sta $fb
+ 165                   
+ 166 d7d1 a0 00                ldy #$00
  167                   
- 168 12bf a0 00                ldy #$00
+ 168                       loop1
  169                   
- 170                       loop2
- 171                   
- 172 12c1 b1 fa                lda ($fa),y
- 173 12c3 f0 06                beq done 
- 174 12c5 20 64 12             jsr wic64_write_byte
- 175 12c8 c8                   iny 
- 176 12c9 d0 f6                bne loop2
- 177                   
- 178                       done
- 179                   
- 180 12cb 60                   rts
- 181                   
- 182                           .bend
- 183                   
- 184                   
- 185                   ; ---------------------------------------------------------
- 186                   ;
- 187                   ;   Wait for Wic64 to return data.
+ 170 d7d3 b1 fa                lda ($fa),y
+ 171 d7d5 f0 0b                beq send
+ 172                   
+ 173 d7d7 ee 2e d9             inc wic64_payload_size
+ 174 d7da d0 03                bne next
+ 175 d7dc ee 2f d9             inc wic64_payload_size + 1
+ 176                   
+ 177                       next
+ 178                   
+ 179 d7df c8                   iny
+ 180                   
+ 181 d7e0 d0 f1                bne loop1
+ 182                   
+ 183                       send
+ 184                           
+ 185 d7e2 20 5a d7             jsr wic64_do_send_mode
+ 186                   
+ 187                           ; send command to wic64 with payload 
  188                   
- 189                   wic64_do_wait_return
- 190                   
- 191                       .block
- 192                   
- 193 12cc a9 00            lda #$00
- 194 12ce 8d 97 13         sta c1
- 195 12d1 a9 00            lda #$00 
- 196 12d3 8d 98 13         sta c2
+ 189 d7e5 a9 52                lda #"r"                        ; protocol
+ 190 d7e7 20 89 d7             jsr wic64_write_byte
+ 191 d7ea 68                   pla                             ; command
+ 192 d7eb 20 89 d7             jsr wic64_write_byte
+ 193 d7ee ad 2e d9             lda wic64_payload_size          ; payload low
+ 194 d7f1 20 89 d7             jsr wic64_write_byte
+ 195 d7f4 ad 2f d9             lda wic64_payload_size + 1      ; payload high
+ 196 d7f7 20 89 d7             jsr wic64_write_byte
  197                   
- 198 12d6 a9 10            lda #$10
- 199 12d8 2c 0d dd         bit $dd0d
- 200 12db d0 11            bne success
+ 198 d7fa a0 00                ldy #$00
+ 199                   
+ 200                       loop2
  201                   
- 202 12dd a9 10            lda #$10
- 203                   
- 204                   wait 
- 205                   
- 206 12df 2c 0d dd         bit $dd0d
- 207 12e2 d0 0a            bne success
- 208                   
- 209 12e4 ce 98 13         dec c2
- 210 12e7 d0 f6            bne wait
- 211 12e9 ce 97 13         dec c1
- 212 12ec d0 f1            bne wait
+ 202 d7fc b1 fa                lda ($fa),y
+ 203 d7fe f0 06                beq done 
+ 204 d800 20 89 d7             jsr wic64_write_byte
+ 205 d803 c8                   iny 
+ 206 d804 d0 f6                bne loop2
+ 207                   
+ 208                       done
+ 209                   
+ 210 d806 60                   rts
+ 211                   
+ 212                           .bend
  213                   
- 214                   success
- 215                   
- 216 12ee 60               rts        
- 217                   
- 218                       .bend
- 219                   
- 220                   ; ---------------------------------------------------------
- 221                   ;
- 222                   ;   Receives the header from the Wic64 and
- 223                   ;   stores the payload size.
- 224                   ;
- 225                   ;   Parameters:
- 226                   ;
- 227                   ;   Affects:
- 228                   ;
- 229                   ;       .A  header status 
- 230                   ;       .X  header size low 
- 231                   ;       .Y  header size high 
- 232                   
- 233                   wic64_do_recv_header
- 234                   
- 235                       .block
- 236                   
- 237                       ; wait for data
+ 214                   
+ 215                   ; ---------------------------------------------------------
+ 216                   ;
+ 217                   ;   Wait for Wic64 to return data.
+ 218                   
+ 219                   wic64_do_wait_return
+ 220                   
+ 221                       .block
+ 222                   
+ 223 d807 a9 00            lda #$00
+ 224 d809 8d d2 d8         sta c1
+ 225 d80c a9 00            lda #$00 
+ 226 d80e 8d d3 d8         sta c2
+ 227                   
+ 228 d811 a9 10            lda #$10
+ 229 d813 2c 0d dd         bit $dd0d
+ 230 d816 d0 11            bne success
+ 231                   
+ 232 d818 a9 10            lda #$10
+ 233                   
+ 234                   wait 
+ 235                   
+ 236 d81a 2c 0d dd         bit $dd0d
+ 237 d81d d0 0a            bne success
  238                   
- 239 12ef 20 cc 12         jsr wic64_do_wait_return
- 240                   
- 241                       ; put wic64 into receive mode
- 242                   
- 243 12f2 20 4b 12         jsr wic64_do_recv_mode
- 244                   
- 245                       ; read dummy byte 
- 246                   
- 247 12f5 20 59 12         jsr wic64_read_byte
- 248                   
- 249                       ; get status and store it
- 250                   
- 251 12f8 20 59 12         jsr wic64_read_byte
- 252 12fb 8d 16 13         sta temp
- 253                   
- 254                       ; get payload low
- 255                   
- 256 12fe 20 59 12         jsr wic64_read_byte
- 257 1301 8d 17 13         sta temp + 1
- 258                   
- 259                       ; get payload hi
- 260                   
- 261 1304 20 59 12         jsr wic64_read_byte
- 262 1307 8d 18 13         sta temp + 2
- 263                   
- 264 130a ad 18 13         lda temp + 2
- 265 130d a8               tay 
- 266 130e ad 17 13         lda temp + 1
- 267 1311 aa               tax 
- 268 1312 ad 16 13         lda temp
- 269                   
- 270 1315 60               rts 
- 271                   
- 272                   temp
- 273                   
- 274 1316 00 00 00         .byte 0,0,0
- 275                   
- 276                       .bend 
- 277                   
+ 239 d81f ce d3 d8         dec c2
+ 240 d822 d0 f6            bne wait
+ 241 d824 ce d2 d8         dec c1
+ 242 d827 d0 f1            bne wait
+ 243                   
+ 244                   success
+ 245                   
+ 246 d829 60               rts        
+ 247                   
+ 248                       .bend
+ 249                   
+ 250                   ; ---------------------------------------------------------
+ 251                   ;
+ 252                   ;   Receives the header from the Wic64 and
+ 253                   ;   stores the payload size.
+ 254                   ;
+ 255                   ;   Parameters:
+ 256                   ;
+ 257                   ;   Affects:
+ 258                   ;
+ 259                   ;       .A  header status 
+ 260                   ;       .X  header size low 
+ 261                   ;       .Y  header size high 
+ 262                   
+ 263                   wic64_do_recv_header
+ 264                   
+ 265                       .block
+ 266                   
+ 267                       ; wait for data
+ 268                   
+ 269 d82a 20 07 d8         jsr wic64_do_wait_return
+ 270                   
+ 271                       ; put wic64 into receive mode
+ 272                   
+ 273 d82d 20 70 d7         jsr wic64_do_recv_mode
+ 274                   
+ 275                       ; read dummy byte 
+ 276                   
+ 277 d830 20 7e d7         jsr wic64_read_byte
  278                   
- 279                   ; ---------------------------------------------------------
- 280                   ;
- 281                   ;   Receives data from Wic64 and stores in
- 282                   ;   requested storage location.
- 283                   ;
- 284                   ;   Parameters:
- 285                   ;
- 286                   ;       .X  pointer to data low byte 
- 287                   ;       .Y  pointer to data high byte 
+ 279                       ; get status and store it
+ 280                   
+ 281 d833 20 7e d7         jsr wic64_read_byte
+ 282 d836 8d 51 d8         sta temp
+ 283                   
+ 284                       ; get payload low
+ 285                   
+ 286 d839 20 7e d7         jsr wic64_read_byte
+ 287 d83c 8d 52 d8         sta temp + 1
  288                   
- 289                       wic64_do_recv_data
+ 289                       ; get payload hi
  290                   
- 291                           .block 
- 292                   
- 293                           ; ???
- 294                   
- 295 1319 8e 95 13             stx ptr_payload 
- 296 131c 8c 96 13             sty ptr_payload + 1
- 297                   
- 298 131f a9 00                lda #$00
- 299 1321 8d 97 13             sta c1
- 300 1324 a9 00                lda #$00 
- 301 1326 8d 98 13             sta c2
- 302                   
- 303 1329 a9 10                lda #$10
- 304 132b 2c 0d dd             bit $dd0d
- 305 132e d0 12                bne success
- 306                   
- 307 1330 a9 10                lda #$10
+ 291 d83f 20 7e d7         jsr wic64_read_byte
+ 292 d842 8d 53 d8         sta temp + 2
+ 293                   
+ 294 d845 ad 53 d8         lda temp + 2
+ 295 d848 a8               tay 
+ 296 d849 ad 52 d8         lda temp + 1
+ 297 d84c aa               tax 
+ 298 d84d ad 51 d8         lda temp
+ 299                   
+ 300 d850 60               rts 
+ 301                   
+ 302                   temp
+ 303                   
+ 304 d851 00 00 00         .byte 0,0,0
+ 305                   
+ 306                       .bend 
+ 307                   
  308                   
- 309                           wait 
- 310                   
- 311 1332 2c 0d dd             bit $dd0d
- 312 1335 d0 0b                bne success
- 313                   
- 314 1337 ce 98 13             dec c2
- 315 133a d0 f6                bne wait
- 316 133c ce 97 13             dec c1
- 317 133f d0 f1                bne wait
+ 309                   ; ---------------------------------------------------------
+ 310                   ;
+ 311                   ;   Receives data from Wic64 and stores in
+ 312                   ;   requested storage location.
+ 313                   ;
+ 314                   ;   Parameters:
+ 315                   ;
+ 316                   ;       .X  pointer to data low byte 
+ 317                   ;       .Y  pointer to data high byte 
  318                   
- 319 1341 60                   rts        
+ 319                       wic64_do_recv_data
  320                   
- 321                           success
+ 321                           .block 
  322                   
- 323 1342 20 4b 12             jsr wic64_do_recv_mode
+ 323                           ; ???
  324                   
- 325                           ; read dummy byte 
- 326                   
- 327 1345 20 59 12             jsr wic64_read_byte
- 328                   
- 329                           ; get status and store it
- 330                   
- 331 1348 20 59 12             jsr wic64_read_byte
- 332 134b 8d e3 13             sta wic64_status
- 333                   
- 334                           ; get payload low
- 335                   
- 336 134e 20 59 12             jsr wic64_read_byte
- 337 1351 a8                   tay
- 338 1352 8d f3 13             sta wic64_payload_size 
- 339                   
- 340                           ; get payload hi
- 341                   
- 342 1355 20 59 12             jsr wic64_read_byte
- 343 1358 aa                   tax 
- 344 1359 8d f4 13             sta wic64_payload_size + 1
- 345                   
- 346                           ; no data check 
- 347                   
- 348 135c 18                   clc
- 349                   
- 350 135d c0 00                cpy #$00
- 351 135f d0 06                bne recv
- 352 1361 e0 00                cpx #$00
- 353 1363 d0 02                bne recv
+ 325 d854 8e d0 d8             stx ptr_payload 
+ 326 d857 8c d1 d8             sty ptr_payload + 1
+ 327                   
+ 328 d85a a9 00                lda #$00
+ 329 d85c 8d d2 d8             sta c1
+ 330 d85f a9 00                lda #$00 
+ 331 d861 8d d3 d8             sta c2
+ 332                   
+ 333 d864 a9 10                lda #$10
+ 334 d866 2c 0d dd             bit $dd0d
+ 335 d869 d0 12                bne success
+ 336                   
+ 337 d86b a9 10                lda #$10
+ 338                   
+ 339                           wait 
+ 340                   
+ 341 d86d 2c 0d dd             bit $dd0d
+ 342 d870 d0 0b                bne success
+ 343                   
+ 344 d872 ce d3 d8             dec c2
+ 345 d875 d0 f6                bne wait
+ 346 d877 ce d2 d8             dec c1
+ 347 d87a d0 f1                bne wait
+ 348                   
+ 349 d87c 60                   rts        
+ 350                   
+ 351                           success
+ 352                   
+ 353 d87d 20 70 d7             jsr wic64_do_recv_mode
  354                   
- 355 1365 38                   sec 
+ 355                           ; read dummy byte 
  356                   
- 357 1366 60                   rts
+ 357 d880 20 7e d7             jsr wic64_read_byte
  358                   
- 359                       recv 
+ 359                           ; get status and store it
  360                   
- 361                           ; save payload size 
- 362                   
- 363 1367 ad f3 13             lda wic64_payload_size
- 364 136a 8d 03 14             sta wic64_payload_work
+ 361 d883 20 7e d7             jsr wic64_read_byte
+ 362 d886 8d 1e d9             sta wic64_status
+ 363                   
+ 364                           ; get payload low
  365                   
- 366 136d ad f4 13             lda wic64_payload_size + 1
- 367 1370 8d 04 14             sta wic64_payload_work + 1
- 368                   
- 369                           ; store payload for later 
- 370                   
- 371 1373 ad 95 13             lda ptr_payload
- 372 1376 85 fa                sta $fa 
- 373 1378 ad 96 13             lda ptr_payload + 1
- 374 137b 85 fb                sta $fb 
+ 366 d889 20 7e d7             jsr wic64_read_byte
+ 367 d88c a8                   tay
+ 368 d88d 8d 2e d9             sta wic64_payload_size 
+ 369                   
+ 370                           ; get payload hi
+ 371                   
+ 372 d890 20 7e d7             jsr wic64_read_byte
+ 373 d893 aa                   tax 
+ 374 d894 8d 2f d9             sta wic64_payload_size + 1
  375                   
- 376 137d a0 00                ldy #$00
+ 376                           ; no data check 
  377                   
- 378                       recv_data
+ 378 d897 18                   clc
  379                   
- 380 137f 20 59 12             jsr wic64_read_byte 
- 381 1382 91 fa                sta ($fa),y
- 382 1384 c8                   iny
- 383 1385 ce 03 14             dec wic64_payload_work
- 384 1388 d0 f5                bne recv_data
- 385 138a ce 04 14             dec wic64_payload_work + 1
- 386 138d ad 04 14             lda wic64_payload_work + 1
- 387 1390 c9 ff                cmp #$ff
- 388 1392 d0 eb                bne recv_data
- 389                   
- 390 1394 60                   rts 
- 391                   
- 392                   ptr_payload
- 393                   
- 394 1395 00 00            .word 0
+ 380 d898 c0 00                cpy #$00
+ 381 d89a d0 06                bne recv
+ 382 d89c e0 00                cpx #$00
+ 383 d89e d0 02                bne recv
+ 384                   
+ 385 d8a0 38                   sec 
+ 386                   
+ 387 d8a1 60                   rts
+ 388                   
+ 389                       recv 
+ 390                   
+ 391                           ; save payload size 
+ 392                   
+ 393 d8a2 ad 2e d9             lda wic64_payload_size
+ 394 d8a5 8d 3e d9             sta wic64_payload_work
  395                   
- 396                           .bend
- 397                   
- 398 1397 00           c1 .byte 0
- 399 1398 00           c2 .byte 0
+ 396 d8a8 ad 2f d9             lda wic64_payload_size + 1
+ 397 d8ab 8d 3f d9             sta wic64_payload_work + 1
+ 398                   
+ 399                           ; store payload for later 
  400                   
- 401                   
- 402 1399 57 49 43 36  .text "wic64-data"
-     139d 34 2d 44 41 
-     13a1 54 41 
- 403                   
- 404                   wic64_call_bits         ; 1
+ 401 d8ae ad d0 d8             lda ptr_payload
+ 402 d8b1 85 fa                sta $fa 
+ 403 d8b3 ad d1 d8             lda ptr_payload + 1
+ 404 d8b6 85 fb                sta $fb 
  405                   
- 406 13a3 00 00 00 00      .repeat 16,0
-     13a7 00 00 00 00 
-     13ab 00 00 00 00 
-     13af 00 00 00 00 
+ 406 d8b8 a0 00                ldy #$00
  407                   
- 408                   wic64_online            ; 2
+ 408                       recv_data
  409                   
- 410 13b3 00 00 00 00      .repeat 16,0
-     13b7 00 00 00 00 
-     13bb 00 00 00 00 
-     13bf 00 00 00 00 
- 411                   
- 412                   wic64_payload_index     ; 3
- 413                   
- 414 13c3 00 00 00 00      .repeat 16,0
-     13c7 00 00 00 00 
-     13cb 00 00 00 00 
-     13cf 00 00 00 00 
- 415                   
- 416                   wic64_payload_buff      ; 4
- 417                   
- 418 13d3 00 00 00 00      .repeat 16,0
-     13d7 00 00 00 00 
-     13db 00 00 00 00 
-     13df 00 00 00 00 
+ 410 d8ba 20 7e d7             jsr wic64_read_byte 
+ 411 d8bd 91 fa                sta ($fa),y
+ 412 d8bf c8                   iny
+ 413 d8c0 ce 3e d9             dec wic64_payload_work
+ 414 d8c3 d0 f5                bne recv_data
+ 415 d8c5 ce 3f d9             dec wic64_payload_work + 1
+ 416 d8c8 ad 3f d9             lda wic64_payload_work + 1
+ 417 d8cb c9 ff                cmp #$ff
+ 418 d8cd d0 eb                bne recv_data
  419                   
- 420                   wic64_status            ; 5
+ 420 d8cf 60                   rts 
  421                   
- 422 13e3 00 00 00 00      .repeat 16,0
-     13e7 00 00 00 00 
-     13eb 00 00 00 00 
-     13ef 00 00 00 00 
+ 422                   ptr_payload
  423                   
- 424                   wic64_payload_size      ; 6
+ 424 d8d0 00 00            .word 0
  425                   
- 426 13f3 00 00 00 00      .repeat 16,0
-     13f7 00 00 00 00 
-     13fb 00 00 00 00 
-     13ff 00 00 00 00 
+ 426                           .bend
  427                   
- 428                   wic64_payload_work      ; 7
- 429                   
- 430 1403 00 00 00 00      .repeat 16,0
-     1407 00 00 00 00 
-     140b 00 00 00 00 
-     140f 00 00 00 00 
+ 428 d8d2 00           c1 .byte 0
+ 429 d8d3 00           c2 .byte 0
+ 430                   
  431                   
- 432                   wic64_payload           ; 8
+ 432 d8d4 57 49 43 36  .text "wic64-data"
+     d8d8 34 2d 44 41 
+     d8dc 54 41 
  433                   
- 434 1413 00 00 00 00      .repeat 64,0
-     1417 00 00 00 00 
-     141b 00 00 00 00 
-     141f 00 00 00 00 
-     1423 00 00 00 00 
-     1427 00 00 00 00 
-     142b 00 00 00 00 
-     142f 00 00 00 00 
-     1433 00 00 00 00 
-     1437 00 00 00 00 
-     143b 00 00 00 00 
-     143f 00 00 00 00 
-     1443 00 00 00 00 
-     1447 00 00 00 00 
-     144b 00 00 00 00 
-     144f 00 00 00 00 
+ 434                   wic64_call_bits         ; 1
  435                   
- 436                   wic64_payload_os_index  ; 12
+ 436 d8de 00 00 00 00      .repeat 16,0
+     d8e2 00 00 00 00 
+     d8e6 00 00 00 00 
+     d8ea 00 00 00 00 
  437                   
- 438 1453 00 00 00 00      .repeat 16,0
-     1457 00 00 00 00 
-     145b 00 00 00 00 
-     145f 00 00 00 00 
+ 438                   wic64_online            ; 2
  439                   
- 440                   wic64_payload_os        ; 13
+ 440 d8ee 00 00 00 00      .repeat 16,0
+     d8f2 00 00 00 00 
+     d8f6 00 00 00 00 
+     d8fa 00 00 00 00 
  441                   
- 442 1463 00 00 00 00      .repeat 64,0
-     1467 00 00 00 00 
-     146b 00 00 00 00 
-     146f 00 00 00 00 
-     1473 00 00 00 00 
-     1477 00 00 00 00 
-     147b 00 00 00 00 
-     147f 00 00 00 00 
-     1483 00 00 00 00 
-     1487 00 00 00 00 
-     148b 00 00 00 00 
-     148f 00 00 00 00 
-     1493 00 00 00 00 
-     1497 00 00 00 00 
-     149b 00 00 00 00 
-     149f 00 00 00 00 
+ 442                   wic64_payload_index     ; 3
  443                   
- 444                   wic64_command_mode      ; 16
+ 444 d8fe 00 00 00 00      .repeat 16,0
+     d902 00 00 00 00 
+     d906 00 00 00 00 
+     d90a 00 00 00 00 
  445                   
- 446 14a3 00 00 00 00      .repeat 16,0
-     14a7 00 00 00 00 
-     14ab 00 00 00 00 
-     14af 00 00 00 00 
+ 446                   wic64_payload_buff      ; 4
  447                   
+ 448 d90e 00 00 00 00      .repeat 16,0
+     d912 00 00 00 00 
+     d916 00 00 00 00 
+     d91a 00 00 00 00 
+ 449                   
+ 450                   wic64_status            ; 5
+ 451                   
+ 452 d91e 00 00 00 00      .repeat 16,0
+     d922 00 00 00 00 
+     d926 00 00 00 00 
+     d92a 00 00 00 00 
+ 453                   
+ 454                   wic64_payload_size      ; 6
+ 455                   
+ 456 d92e 00 00 00 00      .repeat 16,0
+     d932 00 00 00 00 
+     d936 00 00 00 00 
+     d93a 00 00 00 00 
+ 457                   
+ 458                   wic64_payload_work      ; 7
+ 459                   
+ 460 d93e 00 00 00 00      .repeat 16,0
+     d942 00 00 00 00 
+     d946 00 00 00 00 
+     d94a 00 00 00 00 
+ 461                   
+ 462                   wic64_payload           ; 8
+ 463                   
+ 464 d94e 00 00 00 00      .repeat 64,0
+     d952 00 00 00 00 
+     d956 00 00 00 00 
+     d95a 00 00 00 00 
+     d95e 00 00 00 00 
+     d962 00 00 00 00 
+     d966 00 00 00 00 
+     d96a 00 00 00 00 
+     d96e 00 00 00 00 
+     d972 00 00 00 00 
+     d976 00 00 00 00 
+     d97a 00 00 00 00 
+     d97e 00 00 00 00 
+     d982 00 00 00 00 
+     d986 00 00 00 00 
+     d98a 00 00 00 00 
+ 465                   
+ 466                   wic64_payload_os_index  ; 12
+ 467                   
+ 468 d98e 00 00 00 00      .repeat 16,0
+     d992 00 00 00 00 
+     d996 00 00 00 00 
+     d99a 00 00 00 00 
+ 469                   
+ 470                   wic64_payload_os        ; 13
+ 471                   
+ 472 d99e 00 00 00 00      .repeat 64,0
+     d9a2 00 00 00 00 
+     d9a6 00 00 00 00 
+     d9aa 00 00 00 00 
+     d9ae 00 00 00 00 
+     d9b2 00 00 00 00 
+     d9b6 00 00 00 00 
+     d9ba 00 00 00 00 
+     d9be 00 00 00 00 
+     d9c2 00 00 00 00 
+     d9c6 00 00 00 00 
+     d9ca 00 00 00 00 
+     d9ce 00 00 00 00 
+     d9d2 00 00 00 00 
+     d9d6 00 00 00 00 
+     d9da 00 00 00 00 
+ 473                   
+ 474                   wic64_command_mode      ; 16
+ 475                   
+ 476 d9de 00 00 00 00      .repeat 16,0
+     d9e2 00 00 00 00 
+     d9e6 00 00 00 00 
+     d9ea 00 00 00 00 
+ 477                   
   27                   
   28                   .include "data.asm"
    1                   ; send buffer position
    2                   
    3                   d_snd_buff_pos
    4                   
-   5 14b3 00 00 00 00      .repeat 16,0
-     14b7 00 00 00 00 
-     14bb 00 00 00 00 
-     14bf 00 00 00 00 
+   5 d9ee 00 00 00 00      .repeat 16,0
+     d9f2 00 00 00 00 
+     d9f6 00 00 00 00 
+     d9fa 00 00 00 00 
    6                   
    7                   ; send buffer size
    8                   
    9                   d_snd_buff_sz
   10                   
-  11 14c3 00 00 00 00      .repeat 16,0
-     14c7 00 00 00 00 
-     14cb 00 00 00 00 
-     14cf 00 00 00 00 
+  11 d9fe 00 00 00 00      .repeat 16,0
+     da02 00 00 00 00 
+     da06 00 00 00 00 
+     da0a 00 00 00 00 
   12                   
   13                   ; send buffer -> data to send using wic64 to host
   14                   ;
@@ -1802,40 +1858,40 @@
   16                   
   17                   d_snd_buff
   18                   
-  19 14d3 00 00 00 00      .repeat 64,0
-     14d7 00 00 00 00 
-     14db 00 00 00 00 
-     14df 00 00 00 00 
-     14e3 00 00 00 00 
-     14e7 00 00 00 00 
-     14eb 00 00 00 00 
-     14ef 00 00 00 00 
-     14f3 00 00 00 00 
-     14f7 00 00 00 00 
-     14fb 00 00 00 00 
-     14ff 00 00 00 00 
-     1503 00 00 00 00 
-     1507 00 00 00 00 
-     150b 00 00 00 00 
-     150f 00 00 00 00 
+  19 da0e 00 00 00 00      .repeat 64,0
+     da12 00 00 00 00 
+     da16 00 00 00 00 
+     da1a 00 00 00 00 
+     da1e 00 00 00 00 
+     da22 00 00 00 00 
+     da26 00 00 00 00 
+     da2a 00 00 00 00 
+     da2e 00 00 00 00 
+     da32 00 00 00 00 
+     da36 00 00 00 00 
+     da3a 00 00 00 00 
+     da3e 00 00 00 00 
+     da42 00 00 00 00 
+     da46 00 00 00 00 
+     da4a 00 00 00 00 
   20                   
   21                   ; recv buffer position
   22                   
   23                   d_rcv_buff_pos
   24                   
-  25 1513 00 00 00 00      .repeat 16,0
-     1517 00 00 00 00 
-     151b 00 00 00 00 
-     151f 00 00 00 00 
+  25 da4e 00 00 00 00      .repeat 16,0
+     da52 00 00 00 00 
+     da56 00 00 00 00 
+     da5a 00 00 00 00 
   26                   
   27                   ; recv buffer size
   28                   
   29                   d_rcv_buff_sz
   30                   
-  31 1523 00 00 00 00      .repeat 16,0
-     1527 00 00 00 00 
-     152b 00 00 00 00 
-     152f 00 00 00 00 
+  31 da5e 00 00 00 00      .repeat 16,0
+     da62 00 00 00 00 
+     da66 00 00 00 00 
+     da6a 00 00 00 00 
   32                   
   33                   ; recv buffer -> data from the wic64
   34                   ;
@@ -1843,84 +1899,132 @@
   36                   
   37                   d_rcv_buff
   38                   
-  39 1533 00 00 00 00      .repeat 64,0
-     1537 00 00 00 00 
-     153b 00 00 00 00 
-     153f 00 00 00 00 
-     1543 00 00 00 00 
-     1547 00 00 00 00 
-     154b 00 00 00 00 
-     154f 00 00 00 00 
-     1553 00 00 00 00 
-     1557 00 00 00 00 
-     155b 00 00 00 00 
-     155f 00 00 00 00 
-     1563 00 00 00 00 
-     1567 00 00 00 00 
-     156b 00 00 00 00 
-     156f 00 00 00 00 
+  39 da6e 00 00 00 00      .repeat 256,0
+     da72 00 00 00 00 
+     da76 00 00 00 00 
+     da7a 00 00 00 00 
+     da7e 00 00 00 00 
+     da82 00 00 00 00 
+     da86 00 00 00 00 
+     da8a 00 00 00 00 
+     da8e 00 00 00 00 
+     da92 00 00 00 00 
+     da96 00 00 00 00 
+     da9a 00 00 00 00 
+     da9e 00 00 00 00 
+     daa2 00 00 00 00 
+     daa6 00 00 00 00 
+     daaa 00 00 00 00 
+     daae 00 00 00 00 
+     dab2 00 00 00 00 
+     dab6 00 00 00 00 
+     daba 00 00 00 00 
+     dabe 00 00 00 00 
+     dac2 00 00 00 00 
+     dac6 00 00 00 00 
+     daca 00 00 00 00 
+     dace 00 00 00 00 
+     dad2 00 00 00 00 
+     dad6 00 00 00 00 
+     dada 00 00 00 00 
+     dade 00 00 00 00 
+     dae2 00 00 00 00 
+     dae6 00 00 00 00 
+     daea 00 00 00 00 
+     daee 00 00 00 00 
+     daf2 00 00 00 00 
+     daf6 00 00 00 00 
+     dafa 00 00 00 00 
+     dafe 00 00 00 00 
+     db02 00 00 00 00 
+     db06 00 00 00 00 
+     db0a 00 00 00 00 
+     db0e 00 00 00 00 
+     db12 00 00 00 00 
+     db16 00 00 00 00 
+     db1a 00 00 00 00 
+     db1e 00 00 00 00 
+     db22 00 00 00 00 
+     db26 00 00 00 00 
+     db2a 00 00 00 00 
+     db2e 00 00 00 00 
+     db32 00 00 00 00 
+     db36 00 00 00 00 
+     db3a 00 00 00 00 
+     db3e 00 00 00 00 
+     db42 00 00 00 00 
+     db46 00 00 00 00 
+     db4a 00 00 00 00 
+     db4e 00 00 00 00 
+     db52 00 00 00 00 
+     db56 00 00 00 00 
+     db5a 00 00 00 00 
+     db5e 00 00 00 00 
+     db62 00 00 00 00 
+     db66 00 00 00 00 
+     db6a 00 00 00 00 
   40                   
   41                   ; cmd buffer position
   42                   
   43                   d_cmd_buff_pos
   44                   
-  45 1573 00 00 00 00      .repeat 16,0
-     1577 00 00 00 00 
-     157b 00 00 00 00 
-     157f 00 00 00 00 
+  45 db6e 00 00 00 00      .repeat 16,0
+     db72 00 00 00 00 
+     db76 00 00 00 00 
+     db7a 00 00 00 00 
   46                   
   47                   ; cmd buffer size
   48                   
   49                   d_cmd_buff_sz
   50                   
-  51 1583 00 00 00 00      .repeat 16,0
-     1587 00 00 00 00 
-     158b 00 00 00 00 
-     158f 00 00 00 00 
+  51 db7e 00 00 00 00      .repeat 16,0
+     db82 00 00 00 00 
+     db86 00 00 00 00 
+     db8a 00 00 00 00 
   52                   
   53                   ; cmd buffer -> command data for network/cnp
   54                   
   55                   
   56                   d_cmd_buff
   57                   
-  58 1593 00 00 00 00      .repeat 16,0
-     1597 00 00 00 00 
-     159b 00 00 00 00 
-     159f 00 00 00 00 
+  58 db8e 00 00 00 00      .repeat 16,0
+     db92 00 00 00 00 
+     db96 00 00 00 00 
+     db9a 00 00 00 00 
   59                   
   60                   
   61                   d_payload_sts
   62                   
-  63 15a3 00 00 00 00      .repeat 16,0
-     15a7 00 00 00 00 
-     15ab 00 00 00 00 
-     15af 00 00 00 00 
+  63 db9e 00 00 00 00      .repeat 16,0
+     dba2 00 00 00 00 
+     dba6 00 00 00 00 
+     dbaa 00 00 00 00 
   64                   
   65                   d_payload_sz
   66                   
-  67 15b3 00 00 00 00      .repeat 16,0
-     15b7 00 00 00 00 
-     15bb 00 00 00 00 
-     15bf 00 00 00 00 
+  67 dbae 00 00 00 00      .repeat 16,0
+     dbb2 00 00 00 00 
+     dbb6 00 00 00 00 
+     dbba 00 00 00 00 
   68                   
   69                   w_payload
   70                   
-  71 15c3 00 00 00 00      .repeat 64,0
-     15c7 00 00 00 00 
-     15cb 00 00 00 00 
-     15cf 00 00 00 00 
-     15d3 00 00 00 00 
-     15d7 00 00 00 00 
-     15db 00 00 00 00 
-     15df 00 00 00 00 
-     15e3 00 00 00 00 
-     15e7 00 00 00 00 
-     15eb 00 00 00 00 
-     15ef 00 00 00 00 
-     15f3 00 00 00 00 
-     15f7 00 00 00 00 
-     15fb 00 00 00 00 
-     15ff 00 00 00 00 
+  71 dbbe 00 00 00 00      .repeat 64,0
+     dbc2 00 00 00 00 
+     dbc6 00 00 00 00 
+     dbca 00 00 00 00 
+     dbce 00 00 00 00 
+     dbd2 00 00 00 00 
+     dbd6 00 00 00 00 
+     dbda 00 00 00 00 
+     dbde 00 00 00 00 
+     dbe2 00 00 00 00 
+     dbe6 00 00 00 00 
+     dbea 00 00 00 00 
+     dbee 00 00 00 00 
+     dbf2 00 00 00 00 
+     dbf6 00 00 00 00 
+     dbfa 00 00 00 00 
   72                   
   29                   
   30                   .include "sys.asm"
@@ -1944,11 +2048,11 @@
   15                   bkalloc_        = $0009
   16                   
    4                   pgfree   #syscall lmem,pgfree_
-  20 1603 fe                    .byte \1
-  21 1604 0f 00                 .word \2
+  20 dbfe fe                    .byte \1
+  21 dbff 0f 00                 .word \2
    5                   pgalloc  #syscall lmem,pgalloc_
-  20 1606 fe                    .byte \1
-  21 1607 15 00                 .word \2
+  20 dc01 fe                    .byte \1
+  21 dc02 15 00                 .word \2
    6                   
    7                            #inc_h "service"
    1                   lser            = $00f2
@@ -1970,8 +2074,8 @@
   17                   unldlib_        = $002d
   18                   
    8                   quitapp  #syscall lser,quitapp_
-  20 1609 f2                    .byte \1
-  21 160a 21 00                 .word \2
+  20 dc04 f2                    .byte \1
+  21 dc05 21 00                 .word \2
    9                   
   10                            #inc_h "string"
    1                   lstr            = $00fa
@@ -1987,11 +2091,11 @@
   11                   strins_         = $001b
   12                   
   11                   pet2asc  #syscall lstr,pet2asc_  ;If needed for strings
-  20 160c fa                    .byte \1
-  21 160d 09 00                 .word \2
+  20 dc07 fa                    .byte \1
+  21 dc08 09 00                 .word \2
   12                   
   13                   
   31                   
-  32 160f ff           .byte $ff
+  32 dc0a ff           .byte $ff
   33                   
   34                   

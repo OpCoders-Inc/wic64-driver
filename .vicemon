@@ -1,28 +1,33 @@
+c64os_driver:
+  /home/paul/Mount/Workspace/c64os/wic64-driver/out/nhd.upwc.lst:
+    asm_base: 54528
+    driver_base: 21760
+    offset: -32768
 layout:
-  active: 5
+  active: 7
   tabs:
   - children:
     - children:
-      - config: {}
-        title: Code
-        type: panel
-        view: Code
+      - children:
+        - config: {}
+          title: C64 OS Driver
+          type: panel
+          view: C64 OS Driver
+        - config: {}
+          title: Code
+          type: panel
+          view: Code
+        dir: vertical
+        sizes:
+        - 419
+        - 664
       dir: vertical
       sizes:
-      - 480
+      - 1087
     dir: horizontal
     name: Code
     sizes:
-    - 624
-  - children:
-    - config: {}
-      title: Memory
-      type: panel
-      view: Memory
-    dir: horizontal
-    name: Memory
-    sizes:
-    - 624
+    - 1094
   - children:
     - children:
       - config: {}
@@ -40,7 +45,7 @@ layout:
     dir: horizontal
     name: C64OS Memory
     sizes:
-    - 2264
+    - 1094
   - children:
     - children:
       - config: {}
@@ -53,56 +58,12 @@ layout:
         view: REU Reader
       dir: vertical
       sizes:
-      - 815
-      - 268
+      - 358
+      - 118
     dir: horizontal
     name: C64OS REU
     sizes:
-    - 2264
-  - children:
-    - children:
-      - children:
-        - children:
-          - children:
-            - config: {}
-              title: C64 OS Driver
-              type: panel
-              view: C64 OS Driver
-            - config: {}
-              title: Symbols
-              type: panel
-              view: Symbols
-            dir: vertical
-            sizes:
-            - 419
-            - 664
-          - children:
-            - config: {}
-              title: Code
-              type: panel
-              view: Code
-            - config: {}
-              title: Memory
-              type: panel
-              view: Memory
-            dir: horizontal
-            sizes:
-            - 1002
-            - 611
-          dir: horizontal
-          sizes:
-          - 643
-          - 1617
-        dir: horizontal
-        sizes:
-        - 2264
-      dir: vertical
-      sizes:
-      - 1087
-    dir: horizontal
-    name: C64OS Driver
-    sizes:
-    - 2264
+    - 624
   - children:
     - config: {}
       title: WiC64 Monitor
@@ -111,17 +72,109 @@ layout:
     dir: horizontal
     name: WIC64
     sizes:
-    - 2264
+    - 624
+  - children:
+    - config: {}
+      title: Memory
+      type: panel
+      view: Memory
+    dir: horizontal
+    name: Memory
+    sizes:
+    - 624
+  - children:
+    - config:
+        address: 0
+        config: 55
+        pages: 256
+      title: Mem Config C64
+      type: panel
+      view: Mem Config C64
+    dir: horizontal
+    name: Memory 64
+    sizes:
+    - 624
+  - children:
+    - children:
+      - config: {}
+        title: Symbols
+        type: panel
+        view: Symbols
+      - config: {}
+        title: Watch
+        type: panel
+        view: Watch
+      dir: vertical
+      sizes:
+      - 199
+      - 277
+    dir: horizontal
+    name: Watches
+    sizes:
+    - 624
+  - children:
+    - children:
+      - children:
+        - config: {}
+          title: Trace
+          type: panel
+          view: Trace
+        - config: {}
+          title: CPU History
+          type: panel
+          view: CPU History
+        dir: vertical
+        sizes:
+        - 542
+        - 541
+      dir: vertical
+      sizes:
+      - 1087
+    dir: horizontal
+    name: Workspace 8
+    sizes:
+    - 1223
+plugins:
+- c64os_driver
+- c64os_memmap
+- c64os_reumap
+- vicemon.plugins.wic64_log
+- wic64_log
+- wic64_view
 state:
   options:
     follow_pc: false
-    poll_interval: 1.0
-    poll_mode: quick
+    poll_full_every: 8
+    poll_interval: 0.05
+    poll_mode: full
+traces:
+- jdataget
+- jdataput
+- jopensock
+- jpollget
+- jsetrate
+- jssidstat
+- jlink
+tracing:
+  buffer_seconds: 60
+  enabled: true
 watches:
 - $D011
 - $D012
 - $D020
 - $D021
 - $DC01
-- jsig:8:i
-- d_rcv_buff:p:i
+- jsig:4:i
+- $0090:p:i
+- $fa:t
+- $fa, $fb
+- d_cmd_buff:128:i
+- d_cmd_buff_sz
+- d_payload_sts
+- d_rcv_buff:128:i
+- d_rcv_buff_sz
+- d_rcv_buff_sz
+- d_snd_buff_pos
+- d_snd_buff:128:i
+- d_snd_buff_pos
+- d_snd_buff_sz

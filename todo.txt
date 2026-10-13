@@ -1,99 +1,27 @@
+# WiC64 NHD Driver — src5 Two-Buffer Architecture
 
-when ssid is called
+## P0 — Protocol Bugs (wic64.asm)
 
-    send command to join wifi 
-    wait for return from wic64 
+1. Fix receive mode handshake — wait for FLAG2 + read $dd01 after setting PA2 low
+2. Fix response header — remove dummy byte, read status + size_lo + size_hi only
+3. Fix payload size — explicit 2-byte size, no NUL counting
+4. Add timeout to read/write byte loops (3-level cascading counters)
+5. Add IRQ management (SEI during transfers)
 
-    connected ok?
+## P1 — Features
 
-        add "00", "0d" to cmd buffer
+6. Hardware detection in jlink (WC_ECHO or WC_GET_VERSION_STRING)
+7. Real WiFi join in jssidstat (WC_CONN_SSID + poll WC_IS_CONNECTED)
+8. Replace $0245 netstat hack with WC_IS_CONNECTED
 
-    error?
+## P2 — src5-specific
 
-        return error (set carry?)
+9. Verify jpollget fill loop — ensure d_rcv_buff doesn't overflow (256 bytes max)
+10. Verify push_rcv_buff handles wrap correctly
+11. Verify pop_rcv_buff in jdataget returns carry correctly
 
+## P3 — Optimization
 
-
-when poll is called 
-
-    does cmd buffer have data 
-
-        yes?
-
-            return true
-
-    does snd buffer have data
-
-        yes?
-
-            return true
-
-    does wic payload have data
-
-        yes?
-
-            return true
-
-
-    does wic have data available
-
-        yes?
-
-            get payload size 
-            return true
-
-
-    return false
-
-
-when dataget is called
-
-    does cmd buffer have data
-
-        yes?
-
-            get next byte from cmd buffer 
-            send next byte
-
-    does wic buffer have data
-
-        yes?
-
-            read next byte from wic            
-            send next rcv byte 
-
-
-
-when dataput is called
-
-    add byte to snd buffer 
-
-    is send buffer full
-
-        yes?
-
-            send buffer to host
-            flush buffer 
-
-        no?
-
-            return 
-
-when opensock is called 
-
-    carry clear
-
-        yes?
-
-            get host info
-            open tcp socket
-            add "01", "0d" to cmd buffer
-
-        no?
-
-            close tcp socket
-            add "03", "0d" to cmd buffer
-
-
-
-
+12. Batch send buffer (flush_snd_buff sends one WC_TCP_WRITE per flush)
+13. Parse and propagate error status codes
+14. TCP close in jopensock (carry set = close socket)
